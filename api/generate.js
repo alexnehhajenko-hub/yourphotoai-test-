@@ -1,23 +1,25 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
 // Фото / текст / эффекты кожи / мимика / поздравления
-// Без возврата prompt на фронт
-// + Жёсткое правило: НИКАКИХ надписей, логотипов, интерфейсов на итоговом фото
+// Без возврата prompt на фронт, с усиленным сохранением лица
 
 import Replicate from "replicate";
 
-// Стили, усиленный oil и новый beauty
+// Стили, усиленный beauty и oil
 const STYLE_PREFIX = {
   // Новый стиль: светлый, гладкая кожа, без морщин, бьюти-портрет
   beauty:
-    "soft beauty portrait, studio lighting, bright airy tones, smooth flawless skin, no wrinkles, gentle high-end retouch, subtle glow, k-beauty style, pastel background, flattering look",
+    "soft beauty portrait, studio lighting, bright airy tones, smooth flawless skin, no wrinkles, gentle high-end retouch, pastel background, flattering look",
 
-  // Художественная картина маслом (можно оставлять как есть)
+  // Художественная картина маслом
   oil:
-    "dramatic oil painting portrait, impasto style, very visible thick brush strokes, rich oil paint texture, canvas texture, painterly background, face slightly stylized, not photorealistic, strong painterly look, soft edges",
+    "dramatic oil painting portrait, impasto style, very visible thick brush strokes, rich oil paint texture, canvas texture, painterly background, slightly stylized face but still clearly the same person",
 
-  anime: "anime style portrait, clean lines, soft pastel shading",
-  poster: "cinematic movie poster portrait, dramatic lighting, high contrast",
-  classic: "classical old master portrait, realism, warm tones, detailed skin",
+  anime:
+    "anime style portrait, clean lines, soft pastel shading, stylized but clearly based on the same person as the reference",
+  poster:
+    "cinematic movie poster portrait, dramatic lighting, high contrast, strong depth, premium film look",
+  classic:
+    "classical old master portrait, realism, warm tones, detailed skin, subtle painterly feel",
   default: "realistic portrait, detailed face, soft studio lighting"
 };
 
@@ -40,25 +42,17 @@ const EFFECT_PROMPTS = {
   "eyes-brighter": "brighter eyes, more vivid and expressive gaze"
 };
 
-// Поздравления — ТОЛЬКО атмосфера, БЕЗ текста на изображении
+// Поздравления — стиль + факт русской надписи (без жёстких фраз)
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year portrait, glowing warm lights, soft snow, cozy winter atmosphere, no visible text, no logos, clean background",
+    "festive New Year greeting portrait, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
   birthday:
-    "birthday themed portrait, balloons, confetti, festive colorful composition, joyful mood, no visible text, no logos, clean background",
+    "birthday greeting portrait, balloons, confetti, festive composition, elegant russian handwritten birthday greeting text on the image",
   funny:
-    "playful humorous portrait, bright vivid colors, fun dynamic composition, cheerful mood, no visible text, no logos, clean background",
+    "playful humorous greeting portrait, bright colors, fun composition, creative russian handwritten funny greeting text on the image",
   scary:
-    "dark horror themed portrait, spooky lighting, eerie atmosphere, mysterious background, no visible text, no logos, clean background"
+    "dark horror themed greeting portrait, spooky lighting, eerie atmosphere, creepy russian handwritten horror greeting text on the image"
 };
-
-// БАЗОВЫЙ ПРОМПТ ДЛЯ УДАЛЕНИЯ ЛЮБОГО ТЕКСТА / ЛОГОТИПОВ / ИНТЕРФЕЙСА
-const NO_TEXT_BASE_PROMPT =
-  "clean high-quality portrait of the person, reconstruct face only, remove all text, remove all numbers, remove all watermarks, remove all logos, remove any UI elements, remove phone screen overlays, remove status bar, remove timestamps, remove notifications, no captions, no writing, no symbols on the image, no artifacts, simple clean background";
-
-// NEGATIVE PROMPT — явно запрещаем текст, цифры, интерфейсы и т.п.
-const NEGATIVE_TEXT_PROMPT =
-  "text, numbers, letters, subtitles, captions, watermark, logo, stickers, emojis, UI elements, phone interface, time, battery icon, notification icons, status bar, on-screen controls, overlays";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -93,29 +87,29 @@ export default async function handler(req, res) {
         .join(", ");
     }
 
-    // 4. Поздравление (атмосфера, БЕЗ текста на картинке)
+    // 4. Поздравление
     let greetingPrompt = "";
     if (greeting && GREETING_PROMPTS[greeting]) {
       greetingPrompt = GREETING_PROMPTS[greeting];
     }
 
-    // 5. Итоговый prompt:
-    //    - стиль
-    //    - базовое правило "без текста"
-    //    - пользовательский текст
-    //    - эффекты
-    //    - атмосфера поздравления
-    const promptParts = [stylePrefix, NO_TEXT_BASE_PROMPT];
+    // 5. Усиленный блок про сохранение лица
+    // Если есть фото — жёстко просим сохранить идентичность
+    const identityPrefix = photo
+      ? "portrait of the same person as in the reference photo, keep exact facial structure and identity, do not change the person, same age and gender, single person, no additional people"
+      : "single person portrait, centered composition";
+
+    // 6. Итоговый prompt (остаётся только на сервере, пользователю не отдаём)
+    const promptParts = [identityPrefix, stylePrefix];
     if (userPrompt) promptParts.push(userPrompt);
     if (effectsPrompt) promptParts.push(effectsPrompt);
     if (greetingPrompt) promptParts.push(greetingPrompt);
 
     const prompt = promptParts.join(". ").trim();
 
-    // 6. Вход для Replicate
+    // 7. Вход для Replicate
     const input = {
       prompt,
-      negative_prompt: NEGATIVE_TEXT_PROMPT,
       output_format: "jpg"
     };
 
