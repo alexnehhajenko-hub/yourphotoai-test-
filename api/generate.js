@@ -1,80 +1,94 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
-// Фото / текст / эффекты кожи / мимика / поздравления
-// ВАЖНО: максимально сохраняем того же человека, только улучшаем
+// Фото / эффекты кожи / мимика / поздравления
+// Главное: максимально сохраняем ЛИЧНОСТЬ с референса
 
 import Replicate from "replicate";
 
-// Базовый префикс: всегда тот же человек
-const BASE_IDENTITY_PROMPT = `
-ultra realistic portrait of the SAME person from the input photo,
-keep the same facial structure, same weight, same age (±5 years),
-same nose, eyes, lips, jawline, face shape and proportions,
-do not replace the face, do not invent a different person,
-only improve lighting, colors and small cosmetic details
-`;
+// Общий промпт, который всегда добавляется — про сохранение лица
+const IDENTITY_PROMPT = `
+keep exactly the same person as on the reference photo,
+same facial structure, same nose, lips, eyes, jaw and face shape,
+same ethnicity and overall age group,
+do NOT replace the face, no face swap, no new character,
+only gentle beauty retouch and light improvements
+`.trim();
 
-// Стиль — добавка к базовому описанию
-const STYLE_SUFFIX = {
+// Негативный промпт — чего нельзя делать
+const NEGATIVE_PROMPT = `
+different person, face swap, changed identity, celebrity face,
+over-slimmed unrealistic face, plastic doll, barbie face,
+extra limbs, deformed eyes, distorted face, glitch, artifact
+`.trim();
+
+// Стили
+const STYLE_PREFIX = {
+  // Мягкий бьюти-стиль: та же женщина / тот же мужчина, только лучше отретуширован
   beauty: `
-natural beauty portrait photography in soft studio light,
-subtle skin smoothing and gentle retouch,
-no extreme makeover, no heavy makeup, realistic natural look
-`,
+soft beauty portrait photo of the same person from the reference,
+natural realistic look, no heavy makeup,
+slightly softened skin, reduced eyebags,
+subtle slimming of cheeks but same bone structure,
+studio lighting, warm tones, shallow depth of field
+`.trim(),
+
+  // Художественная картина маслом
   oil: `
-dramatic oil painting portrait, visible brush strokes,
-rich paint texture and canvas texture,
-slightly stylized but still clearly the same person
-`,
+realistic oil painting portrait of the same person,
+visible brush strokes, classic painting texture, warm tones
+`.trim(),
+
   anime: `
-anime style portrait while clearly keeping the same identity,
-same facial proportions translated into anime style,
+anime style portrait of the same person, same face and hair silhouette,
 clean lines, soft pastel shading
-`,
+`.trim(),
+
   poster: `
-cinematic movie poster portrait, dramatic lighting, high contrast,
-slightly stylized but still clearly recognisable as the same person
-`,
+cinematic movie poster portrait of the same person,
+dramatic lighting, high contrast, film still look
+`.trim(),
+
   classic: `
-classical old master portrait painting, warm tones, detailed skin,
-subtle painterly texture, historically styled but same likeness
-`,
+classical old master portrait of the same person,
+subtle painterly style, realism, warm tones, detailed skin
+`.trim(),
+
   default: `
-realistic portrait photography, detailed face, soft studio lighting
-`
+realistic portrait photo of the same person, soft studio lighting
+`.trim()
 };
 
-// Эффекты обработки кожи + мимика
+// Эффекты кожи + мимика — делаем мягкими, без радикальных изменений
 const EFFECT_PROMPTS = {
   // кожа
   "no-wrinkles":
-    "slightly reduced wrinkles, gentle beauty retouch, keep realistic skin texture",
+    "slightly reduced wrinkles, smoother skin, gentle retouch, still natural skin texture",
   younger:
-    "looks a bit younger but clearly the same person, fresher skin, softer eye bags",
+    "looks about 5-10 years younger but clearly the same person, fresher skin, more rested look",
   "smooth-skin":
-    "smooth and even skin tone, light retouch only, pores and details still visible",
+    "more even skin tone, slightly smoother skin, small imperfections reduced",
 
   // мимика
   "smile-soft": "subtle soft smile, calm and relaxed expression",
-  "smile-big": "big warm smile, expressive and friendly face",
+  "smile-big": "bigger warm smile, expressive and friendly, still natural",
   "smile-hollywood":
-    "wide hollywood smile, visible white teeth, confident look",
+    "wide smile with visible teeth, natural realistic teeth, confident look",
   laugh: "laughing with a bright smile, joyful and natural expression",
   neutral: "neutral face expression, relaxed, no strong visible emotion",
   serious: "serious face, no smile, focused expression",
-  "eyes-bigger": "slightly bigger eyes, more open and attentive look",
-  "eyes-brighter": "brighter eyes, more vivid and expressive gaze"
+  "eyes-bigger": "slightly more open eyes, more attentive look, same eye shape",
+  "eyes-brighter": "brighter, clearer eyes, more vivid and expressive gaze"
 };
 
-// Поздравления — стиль + факт надписи
+// Поздравления
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year greeting portrait, glowing warm lights, snow, elegant greeting handwritten text on the image",
+    "festive New Year greeting portrait, soft lights, a few subtle winter decorations, elegant russian handwritten New Year greeting text on the image",
   birthday:
-    "birthday greeting portrait, balloons, confetti, festive composition, elegant handwritten birthday greeting text on the image",
+    "birthday greeting portrait, soft party decorations, balloons blurred in the background, elegant russian handwritten birthday greeting text on the image",
   funny:
-    "playful humorous greeting portrait, bright colors, fun composition, creative handwritten funny greeting text on the image",
+    "playful humorous greeting portrait, bright but not childish colors, creative russian handwritten funny greeting text on the image",
   scary:
-    "dark horror themed greeting portrait, spooky lighting, eerie atmosphere, creepy handwritten horror greeting text on the image"
+    "dark horror themed greeting portrait, spooky but still recognizable face, russian handwritten horror greeting text on the image"
 };
 
 export default async function handler(req, res) {
@@ -83,7 +97,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Парсим тело
     let body = req.body;
     if (typeof body === "string") {
       try {
@@ -95,13 +108,13 @@ export default async function handler(req, res) {
 
     const { style, text, photo, effects, greeting } = body || {};
 
-    // 1. Стиль — берём суффикс + общий базовый префикс
-    const styleSuffix = STYLE_SUFFIX[style] || STYLE_SUFFIX.default;
+    // 1. Стиль
+    const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
 
-    // 2. Пользовательский текст (на будущее, пока редко используем)
+    // 2. Пользовательский текст (пока у нас на фронте его нет, но на будущее)
     const userPrompt = (text || "").trim();
 
-    // 3. Эффекты (кожа + мимика)
+    // 3. Эффекты
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -116,21 +129,22 @@ export default async function handler(req, res) {
       greetingPrompt = GREETING_PROMPTS[greeting];
     }
 
-    // 5. Итоговый prompt (остаётся только на сервере)
-    const promptParts = [BASE_IDENTITY_PROMPT, styleSuffix];
+    // 5. Финальный prompt — ВСЕГДА включает IDENTITY_PROMPT
+    const promptParts = [stylePrefix, IDENTITY_PROMPT];
     if (userPrompt) promptParts.push(userPrompt);
     if (effectsPrompt) promptParts.push(effectsPrompt);
     if (greetingPrompt) promptParts.push(greetingPrompt);
 
     const prompt = promptParts.join(". ").trim();
 
-    // 6. Вход для Replicate
+    // 6. Подготовка входа в Replicate
     const input = {
       prompt,
+      negative_prompt: NEGATIVE_PROMPT,
       output_format: "jpg"
+      // сюда можно добавить доп-параметры модели (guidance_scale и т.п.), если захотим
     };
 
-    // Фото добавляем только если есть
     if (photo) {
       input.input_image = photo;
     }
@@ -139,12 +153,11 @@ export default async function handler(req, res) {
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const output = await replicate.run(
-      "black-forest-labs/flux-kontext-pro",
-      { input }
-    );
+    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
+      input
+    });
 
-    // Поиск URL
+    // 7. Достаём URL картинки
     let imageUrl = null;
 
     if (Array.isArray(output)) {
@@ -168,7 +181,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // prompt не отдаём наружу
     return res.status(200).json({
       ok: true,
       image: imageUrl
