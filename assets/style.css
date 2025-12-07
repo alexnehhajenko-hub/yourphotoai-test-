@@ -1,98 +1,119 @@
-/* Base layout */
+/* assets/style.css */
+/* Общий фон и типографика */
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
   padding: 0;
+}
+
+body {
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1b1640 0, #050712 55%, #020309 100%);
+  background: radial-gradient(circle at top, #191644 0, #050419 45%, #02020a 100%);
   color: #f5f5ff;
 }
 
+/* Контейнер приложения */
+
 .app {
-  max-width: 720px;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 20px 16px 40px;
+  padding: 16px 14px 32px;
 }
+
+/* Хедер */
 
 .app-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .app-title {
-  font-size: 24px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #c0c4ff;
 }
 
 .app-subtitle {
+  margin-top: 6px;
   font-size: 13px;
-  color: #a0a4d8;
+  color: #8f93c9;
 }
 
-/* Preview */
+/* Превью */
 
 .preview-box {
-  background: radial-gradient(circle at top left, #262a55 0, #111427 35%, #080a18 100%);
-  border-radius: 24px;
-  padding: 18px;
-  border: 1px solid rgba(153, 132, 255, 0.25);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-  margin-bottom: 18px;
   position: relative;
+  border-radius: 24px;
+  padding: 16px 12px 18px;
+  background: radial-gradient(circle at top, #262759 0, #101128 50%, #07081a 100%);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(169, 144, 255, 0.28);
+  margin-bottom: 14px;
 }
 
 .preview-label {
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: #8e93c7;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8a8fcd;
   margin-bottom: 8px;
 }
 
 .preview-image {
   width: 100%;
-  border-radius: 18px;
+  border-radius: 20px;
   display: block;
   object-fit: cover;
-  max-height: 540px;
 }
 
 .preview-placeholder {
   min-height: 180px;
+  border-radius: 18px;
+  border: 1px dashed rgba(130, 135, 188, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-size: 14px;
-  color: #8e93c7;
+  font-size: 13px;
+  color: #8b90cb;
+  background: radial-gradient(circle at top, rgba(148, 117, 255, 0.18), rgba(4, 6, 22, 0.9));
+  padding: 14px;
 }
 
-/* overlay text for greeting */
+/* Оверлей с поздравлением */
 
 .greeting-overlay {
   position: absolute;
-  left: 24px;
-  bottom: 26px;
-  padding: 4px 10px;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 6px 12px;
   border-radius: 999px;
+  background: rgba(18, 19, 48, 0.92);
+  border: 1px solid rgba(222, 205, 255, 0.68);
   font-size: 11px;
-  background: rgba(10, 10, 40, 0.85);
-  border: 1px solid rgba(220, 200, 255, 0.6);
-  color: #f3e6ff;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f3ebff;
   display: none;
 }
 
-/* generating status */
+/* Статус генерации */
 
 .generate-status {
   position: absolute;
   inset: 0;
-  background: rgba(3, 4, 14, 0.82);
   border-radius: 24px;
+  background: radial-gradient(circle at top, rgba(24, 21, 73, 0.9), rgba(3, 4, 18, 0.96));
   display: none;
   align-items: center;
   justify-content: center;
@@ -101,17 +122,17 @@ body {
 }
 
 .spinner {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.18);
-  border-top-color: #ffffff;
+  border: 2px solid rgba(203, 189, 255, 0.3);
+  border-top-color: #e5d6ff;
   animation: spin 0.8s linear infinite;
 }
 
 .generate-status-text {
-  font-size: 14px;
-  color: #dcdfff;
+  font-size: 13px;
+  color: #d0caff;
 }
 
 @keyframes spin {
@@ -120,21 +141,19 @@ body {
   }
 }
 
-/* Controls */
+/* Контролы под фото */
 
 .controls {
-  margin-bottom: 10px;
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  margin-top: 10px;
 }
 
 .controls-hidden {
-  opacity: 0.2;
-  transform: translateY(4px);
   pointer-events: none;
+  opacity: 0.2;
+  filter: blur(1px);
 }
 
 .selection-row {
-  min-height: 24px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -143,42 +162,49 @@ body {
 
 .selection-chip {
   border-radius: 999px;
-  border: 1px solid rgba(168, 150, 255, 0.7);
   padding: 4px 10px;
   font-size: 11px;
-  color: #e0ddff;
-  background: rgba(7, 8, 26, 0.9);
+  background: rgba(36, 39, 92, 0.9);
+  border: 1px solid rgba(157, 142, 255, 0.7);
+  color: #dcd7ff;
 }
+
+/* Список кнопок */
 
 .button-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .btn-main {
-  border-radius: 16px;
   border: none;
-  padding: 12px 14px;
-  font-size: 15px;
+  border-radius: 1000px;
+  padding: 12px 16px;
+  background: radial-gradient(circle at top left, #6b50ff 0, #4330ac 40%, #272356 100%);
+  color: #f5f3ff;
+  font-size: 14px;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 10px;
-  background: linear-gradient(135deg, #262a55, #111427);
-  color: #f5f5ff;
+  justify-content: center;
   cursor: pointer;
-}
-
-.btn-main .btn-icon {
-  font-size: 18px;
+  box-shadow: 0 14px 24px rgba(17, 9, 72, 0.9);
 }
 
 .btn-secondary {
-  background: linear-gradient(90deg, #a86bff, #e47cff);
-  color: #0a0719;
-  font-weight: 600;
-  box-shadow: 0 16px 32px rgba(114, 51, 255, 0.7);
+  background: linear-gradient(135deg, #3a335e, #252047);
+  box-shadow: 0 10px 18px rgba(8, 5, 33, 0.8);
+}
+
+.btn-main:active {
+  transform: translateY(1px);
+  box-shadow: 0 8px 16px rgba(8, 5, 33, 0.7);
+}
+
+.btn-icon {
+  font-size: 18px;
 }
 
 .btn-row-split {
@@ -188,61 +214,72 @@ body {
 
 .btn-half {
   flex: 1;
-  border-radius: 16px;
   border: none;
-  padding: 11px 10px;
-  font-size: 14px;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(15, 17, 36, 0.9);
-  color: #f5f5ff;
+  background: radial-gradient(circle at top, #2f294e, #18142d);
+  color: #e3e0ff;
   cursor: pointer;
 }
 
 .btn-pay {
-  background: radial-gradient(circle at top, #40325a, #251737);
+  background: linear-gradient(135deg, #ffb86c, #ff7a7b);
+  color: #2b0b08;
 }
 
-/* Download */
+/* Кнопка скачивания */
 
 .download-row {
-  margin-top: 10px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-start;
 }
 
 .btn-download {
+  border-radius: 999px;
+  border: 1px solid rgba(176, 162, 255, 0.9);
+  font-size: 12px;
+  padding: 7px 12px;
+  color: #efe8ff;
+  text-decoration: none;
+  background: rgba(12, 10, 37, 0.9);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 9px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(190, 176, 255, 0.9);
-  font-size: 13px;
-  text-decoration: none;
-  color: #f5f5ff;
-  background: rgba(7, 8, 24, 0.96);
+  gap: 6px;
 }
 
-/* Footer */
+/* Футер */
 
 .footer {
   margin-top: 18px;
   font-size: 11px;
-  color: #7074a2;
   text-align: center;
+  color: #7579ad;
 }
 
-/* Sheet */
+.footer a {
+  color: #b9bfff;
+  text-decoration: none;
+}
+
+/* -----------------------------
+   SHEET — панель выбора эффектов
+   теперь по ЦЕНТРУ экрана
+   ----------------------------- */
 
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(5, 5, 20, 0.7);
+  background: rgba(3, 5, 20, 0.82);
   display: none;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 20;
+  align-items: center;        /* центр по вертикали */
+  justify-content: center;    /* центр по горизонтали */
+  z-index: 40;
 }
 
 .sheet-backdrop.sheet-open {
@@ -251,12 +288,13 @@ body {
 
 .sheet {
   width: 100%;
-  max-width: 720px;
-  background: #080919;
-  border-radius: 20px 20px 0 0;
-  padding: 14px 14px 22px;
-  border-top: 1px solid rgba(180, 162, 255, 0.4);
-  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.7);
+  max-width: 420px;
+  margin: 0 18px;
+  border-radius: 22px;
+  background: radial-gradient(circle at top, #282a63 0, #11132b 45%, #050516 100%);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(184, 166, 255, 0.7);
+  padding: 14px 14px 16px;
 }
 
 .sheet-header {
@@ -267,51 +305,65 @@ body {
 }
 
 .sheet-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 
 .sheet-close {
   border: none;
-  background: transparent;
-  color: #b9bff5;
-  font-size: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(18, 18, 46, 0.9);
+  color: #dad8ff;
+  font-size: 14px;
   cursor: pointer;
 }
 
 .sheet-description {
   font-size: 12px;
-  color: #8e93c7;
-  margin-bottom: 8px;
+  color: #9b9fda;
+  margin-bottom: 10px;
 }
 
 .sheet-section-title {
   font-size: 11px;
-  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #6d72a6;
+  letter-spacing: 0.14em;
+  color: #8287c7;
   margin: 10px 0 4px;
 }
 
 .chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chip {
   border-radius: 999px;
-  border: 1px solid #313553;
-  background: rgba(9, 10, 24, 0.96);
-  padding: 7px 12px;
-  font-size: 13px;
-  color: #d6dbff;
+  padding: 7px 11px;
+  font-size: 12px;
+  border: 1px solid rgba(103, 110, 186, 0.9);
+  background: rgba(16, 16, 45, 0.9);
+  color: #dde0ff;
   cursor: pointer;
 }
 
 .chip-active {
-  border-color: #c29fff;
-  background: radial-gradient(circle at top, #8b5dff, #26143f);
+  border-color: #f3ddff;
+  background: radial-gradient(circle at top, #8a5cff 0, #4922c4 40%, #1e123e 100%);
   color: #fff;
-  box-shadow: 0 10px 18px rgba(76, 36, 150, 0.5);
+}
+
+/* Мобилка побольше / планшет */
+
+@media (min-width: 600px) {
+  .app {
+    padding-top: 22px;
+  }
+
+  .preview-placeholder {
+    min-height: 220px;
+  }
 }
