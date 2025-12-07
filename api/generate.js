@@ -4,58 +4,55 @@
 
 import Replicate from "replicate";
 
-// Стили — подчёркиваем, что это ЛУЧШАЯ ВЕРСИЯ ЭТОГО ЖЕ ЧЕЛОВЕКА
+// Стили — МАКСИМАЛЬНО сохраняем лицо этого же человека
 const STYLE_PREFIX = {
-  // Главный стиль: улучшенная версия того же человека + кинематографичный свет
+  // Главный стиль: та же внешность, только отдохнувший вид
   beauty: [
-    "highly realistic studio portrait of the SAME person as in the input photo",
-    "this is the BEST IMPROVED VERSION of this person, not a different model",
-    "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
-    "same gender, same ethnicity, same overall personality",
-    "age stays similar (no more than about 5–10 years younger), do NOT turn them into a teenager or a completely different age",
-    "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
-    "keep realistic skin texture and pores, no plastic skin, no doll face",
-    "do NOT change bone structure or completely change the face",
-    "cinematic moody background, slightly darker studio environment",
-    "soft warm key light from the front, gentle rim light, shallow depth of field",
-    "small warm glowing particles floating in the air, subtle bokeh, premium portrait look",
-    "they look like themselves on their very best day in real life"
+    "highly realistic portrait of the SAME person as in the input photo",
+    "STRICT IDENTITY PRESERVATION, identity-preserving face enhancement only",
+    "keep EXACT facial structure: same head size, same face width, same jawline, same nose shape, same eye shape and distance, same lips shape, same ears and skull proportions",
+    "same gender, same ethnicity, same approximate age as in the input photo",
+    "NO radical beautification, NO face replacement, NO model face, NO glamorized stranger",
+    "only SMALL corrections: slightly reduce eye bags and dark circles, gently soften small wrinkles, slightly smooth skin tone, reduce redness and blemishes",
+    "keep real skin texture and pores, no plastic skin, no doll look",
+    "do NOT change bone structure, do NOT slim or stretch the face, do NOT change hairline or haircut drastically",
+    "neutral soft studio lighting on the same person, simple blurred background",
+    "the result must look like the SAME person on a good day in real life"
   ].join(", "),
 
   // Художественная картина маслом
   oil: [
     "oil painting portrait of the SAME person as in the input photo",
-    "keep the same face identity and proportions, recognisably the same person",
-    "same gender, same ethnicity, similar age",
-    "painterly brush strokes, canvas texture, rich warm colors",
-    "gentle improvement only, not a new face"
+    "keep recognisable facial identity and proportions, same gender and ethnicity, similar age",
+    "painterly brush strokes, canvas texture, warm artistic tones",
+    "gentle enhancement only, not a different face"
   ].join(", "),
 
   anime: [
     "anime style portrait of the SAME person as in the input photo",
-    "translate their recognisable facial features into anime style",
+    "translate their recognisable features into anime style while keeping identity",
     "same gender and ethnicity, similar age",
-    "clean lines, soft shading, gentle colors"
+    "clean lines, soft shading"
   ].join(", "),
 
   poster: [
     "cinematic movie poster portrait of the SAME person as in the input photo",
-    "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
+    "keep the same identity and proportions: face shape, eyes, nose, mouth and jaw must clearly match",
     "same gender, same ethnicity, similar age",
-    "dramatic lighting, slightly stylized but still clearly the same person"
+    "dramatic but realistic lighting"
   ].join(", "),
 
   classic: [
     "classical old master realistic portrait of the SAME person as in the input photo",
-    "keep the same face, same gender and ethnicity, similar age",
+    "keep the same face, gender and ethnicity, similar age",
     "warm tones, detailed skin, painterly background",
-    "gentle beautification without changing who the person is"
+    "only gentle beautification, no face change"
   ].join(", "),
 
   default: [
     "realistic portrait of the SAME person as in the input photo",
-    "keep exact facial identity and proportions",
-    "subtle natural beauty retouch only, soft studio lighting"
+    "strong identity preservation, same facial proportions and features",
+    "very subtle natural retouch only, soft lighting"
   ].join(", ")
 };
 
@@ -63,22 +60,22 @@ const STYLE_PREFIX = {
 const EFFECT_PROMPTS = {
   // кожа
   "no-wrinkles":
-    "fewer visible wrinkles, gentle beauty retouch, keep natural skin texture",
+    "slightly softer small wrinkles, gentle beauty retouch, keep natural skin texture and pores",
   younger:
-    "looks around 5–10 years younger but clearly the same person, fresher and more rested face",
+    "looks a LITTLE more rested and fresh but clearly the same age range and the same person",
   "smooth-skin":
-    "smoother and more even skin tone, reduce blemishes and redness, keep pores and realism",
+    "slightly smoother and more even skin tone, reduce blemishes and redness, keep realistic texture",
 
   // мимика
   "smile-soft": "subtle soft smile, calm and relaxed expression",
   "smile-big": "big warm smile, expressive and friendly face",
   "smile-hollywood":
-    "wide smile with visible teeth, hollywood style, still natural",
+    "wide smile with visible teeth, still natural and not overdone",
   laugh: "laughing with a bright smile, joyful and natural expression",
   neutral: "neutral relaxed face expression, no strong emotion",
   serious: "serious face, no smile, focused expression",
-  "eyes-bigger": "slightly bigger and more open eyes, but still realistic",
-  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
+  "eyes-bigger": "eyes VERY SLIGHTLY more open, still realistic proportions",
+  "eyes-brighter": "brighter, clearer irises, more vivid gaze"
 };
 
 // Поздравления — стиль + факт русской надписи
