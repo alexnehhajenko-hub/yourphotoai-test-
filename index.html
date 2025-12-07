@@ -1,120 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>YourPhotoAI – Test Portrait Lab</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <link rel="stylesheet" href="./assets/style.css" />
+  <meta charset="utf-8">
+  <title>WindowToSoul – Portrait Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Стили из папки assets -->
+  <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
   <div class="app">
     <header class="app-header">
-      <div class="app-title">YOURPHOTOAI</div>
-      <div class="app-subtitle">Create your unique AI portrait</div>
+      <div class="app-title">WINDOWTOSOUL</div>
+      <div class="app-subtitle">Выберите эффекты для портрета</div>
     </header>
 
-    <!-- PREVIEW -->
     <section class="preview-box">
       <div class="preview-label">PREVIEW</div>
 
-      <img id="previewImage" class="preview-image" alt="Preview" />
+      <img id="previewImage" class="preview-image" alt="Preview">
 
       <div class="preview-placeholder" id="previewPlaceholder">
-        Add a photo and choose effects.<br />
-        After generation your portrait will appear here.
+        Добавьте фото и выберите эффекты.<br>
+        После подключения ИИ здесь будет ваш портрет.
       </div>
 
       <div class="greeting-overlay" id="greetingOverlay"></div>
 
       <div class="generate-status" id="generateStatus">
         <div class="spinner"></div>
-        <div class="generate-status-text">Generating portrait…</div>
+        <div class="generate-status-text">Генерация портрета…</div>
       </div>
     </section>
 
-    <!-- CONTROLS -->
+    <!-- Кнопки и выбранные эффекты -->
     <div class="controls" id="controls">
-      <div class="selection-row" id="selectionRow"></div>
+      <div class="selection-row" id="selectionRow">
+        <!-- сюда JS добавляет чипы с выбранными параметрами -->
+      </div>
 
       <section class="button-list">
         <button class="btn-main" id="btnStyle">
           <span class="btn-icon">🎨</span>
-          <span>PORTRAIT STYLE</span>
+          <span>Стиль портрета</span>
         </button>
 
         <button class="btn-main" id="btnSkin">
           <span class="btn-icon">✨</span>
-          <span>SKIN EFFECT</span>
+          <span>Эффект кожи</span>
         </button>
 
         <button class="btn-main" id="btnMimic">
           <span class="btn-icon">🙂</span>
-          <span>EXPRESSION</span>
+          <span>Мимика</span>
         </button>
 
         <button class="btn-main" id="btnGreetings">
           <span class="btn-icon">💌</span>
-          <span>GREETINGS</span>
+          <span>Поздравления</span>
+        </button>
+
+        <!-- НОВАЯ КНОПКА: очистить все эффекты и поздравления -->
+        <button class="btn-main" id="btnClearEffects">
+          <span class="btn-icon">🧹</span>
+          <span>Очистить эффекты</span>
         </button>
 
         <button class="btn-main btn-secondary" id="btnGenerate">
           <span class="btn-icon">⚡️</span>
-          <span>GENERATE</span>
+          <span>Сгенерировать</span>
         </button>
 
         <div class="btn-row-split">
           <button class="btn-half" id="btnAddPhoto">
             <span class="btn-icon">📷</span>
-            <span>ADD PHOTO</span>
+            <span>Добавить фото</span>
           </button>
           <button class="btn-half btn-pay" id="btnPay">
             <span class="btn-icon">💳</span>
-            <span>PAY (DISABLED)</span>
+            <span>Оплатить</span>
           </button>
         </div>
       </section>
     </div>
 
-    <!-- DOWNLOAD -->
+    <!-- Кнопка скачивания -->
     <div class="download-row">
       <a
         id="downloadLink"
         class="btn-download"
-        href="#"
-        download="yourphotoai-portrait.jpg"
-        style="display: none"
+        href="#" 
+        download="windowtosoul-portrait.jpg"
+        style="display: none;"
       >
-        Download portrait
+        Скачать портрет
       </a>
     </div>
 
     <footer class="footer">
-      Test interface · Payments & email disabled · Only Replicate generation is active.
+      Тестовый интерфейс. В финальной версии здесь будут ссылки:<br>
+      <a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Refunds</a>.
     </footer>
   </div>
 
-  <!-- HIDDEN INPUT -->
-  <input type="file" id="fileInput" accept="image/*" style="display:none" />
+  <!-- Скрытый input для загрузки фото -->
+  <input type="file" id="fileInput" accept="image/*" style="display:none">
 
-  <!-- SHEET -->
+  <!-- Центровая панель (sheet) для выбора эффектов -->
   <div class="sheet-backdrop" id="sheetBackdrop">
     <div class="sheet">
       <div class="sheet-header">
-        <div class="sheet-title" id="sheetTitle">Choose</div>
+        <div class="sheet-title" id="sheetTitle">Выбор</div>
         <button class="sheet-close" id="sheetCloseBtn">✕</button>
       </div>
       <div class="sheet-description" id="sheetDescription"></div>
 
-      <div class="sheet-section-title" id="sheetCategoryTitle" style="display:none;">
-        Categories
-      </div>
+      <div class="sheet-section-title" id="sheetCategoryTitle" style="display:none;">Категории</div>
       <div class="chip-row" id="sheetCategoryRow" style="display:none;"></div>
 
-      <div class="sheet-section-title" id="sheetOptionsTitle">Options</div>
+      <div class="sheet-section-title" id="sheetOptionsTitle">Варианты</div>
       <div class="chip-row" id="sheetOptionsRow"></div>
     </div>
   </div>
 
+  <!-- Скрипт из assets -->
   <script src="./assets/main.js"></script>
 </body>
 </html>
