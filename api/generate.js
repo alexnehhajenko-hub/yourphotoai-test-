@@ -1,8 +1,5 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
-// ДВУХШАГОВАЯ СХЕМА:
-// 1) flux-kontext-apps/restore-image — восстанавливает лицо, чистит артефакты, сохраняет черты
-// 2) black-forest-labs/flux-kontext-pro — рисует финальный портрет по стилю/эффектам/поздравлению
-// Фото / текст / эффекты кожи / мимика / поздравления
+// Фото / текст / эффекты кожи / мимика / поздравления (в т.ч. DEMON)
 // Без возврата prompt на фронт
 
 import Replicate from "replicate";
@@ -15,7 +12,7 @@ const STYLE_PREFIX = {
     "this is the BEST IMPROVED VERSION of this person, not a different model",
     "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
     "same gender, same ethnicity, same overall personality",
-    "age stays similar (no more than 5–10 years younger), do NOT turn them into a teenager or a completely different age",
+    "age stays similar (no more than about 5–10 years younger), do NOT turn them into a teenager or a completely different age",
     "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
     "keep realistic skin texture and pores, no plastic skin, no doll face",
     "do NOT change bone structure or completely change the face",
@@ -32,6 +29,7 @@ const STYLE_PREFIX = {
     "gentle improvement only, not a new face"
   ].join(", "),
 
+  // Аниме-версия того же человека
   anime: [
     "anime style portrait of the SAME person as in the input photo",
     "translate their recognisable facial features into anime style",
@@ -39,6 +37,7 @@ const STYLE_PREFIX = {
     "clean lines, soft shading, gentle colors"
   ].join(", "),
 
+  // Кинопостер
   poster: [
     "cinematic movie poster portrait of the SAME person as in the input photo",
     "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
@@ -46,6 +45,7 @@ const STYLE_PREFIX = {
     "dramatic lighting, slightly stylized but still clearly the same person"
   ].join(", "),
 
+  // Классический портрет
   classic: [
     "classical old master realistic portrait of the SAME person as in the input photo",
     "keep the same face, same gender and ethnicity, similar age",
@@ -53,6 +53,7 @@ const STYLE_PREFIX = {
     "gentle beautification without changing who the person is"
   ].join(", "),
 
+  // Запасной дефолт
   default: [
     "realistic portrait of the SAME person as in the input photo",
     "keep exact facial identity and proportions",
@@ -79,23 +80,25 @@ const EFFECT_PROMPTS = {
   neutral: "neutral relaxed face expression, no strong emotion",
   serious: "serious face, no smile, focused expression",
   "eyes-bigger": "slightly bigger and more open eyes, but still realistic",
-  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze",
-
-  // опционально: Beauty+ как дополнительный эффект
-  "beauty-plus":
-    "slightly enhanced beauty, smoother skin, brighter eyes, still clearly the same person"
+  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
 };
 
-// Поздравления — стиль + факт русской надписи
+// Поздравления / спец-режимы
+// ⚠️ scary = DEMON-режим с синим огнём и светящимися глазами
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year greeting portrait, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
+    "festive New Year greeting portrait of the SAME person, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
   birthday:
-    "birthday greeting portrait, balloons, confetti, festive composition, elegant russian handwritten birthday greeting text on the image",
+    "birthday greeting portrait of the SAME person, balloons, confetti, festive composition, elegant russian handwritten birthday greeting text on the image",
   funny:
-    "playful humorous greeting portrait, bright colors, fun composition, creative russian handwritten funny greeting text on the image",
-  scary:
-    "dark horror themed greeting portrait, spooky lighting, eerie atmosphere, creepy russian handwritten horror greeting text on the image"
+    "playful humorous greeting portrait of the SAME person, bright colors, fun composition, creative russian handwritten funny greeting text on the image",
+  scary: [
+    "dark demonic portrait of the SAME person as in the input photo",
+    "same gender, same ethnicity, clearly the same facial identity and proportions",
+    "glowing blue eyes, intense blue backlight behind the head, blue fire aura in the background",
+    "dramatic contrast lighting, dark environment, subtle smoke and magical effects",
+    "they still look like themselves, just in a demon / possessed cinematic style"
+  ].join(", ")
 };
 
 export default async function handler(req, res) {
@@ -116,17 +119,13 @@ export default async function handler(req, res) {
 
     const { style, text, photo, effects, greeting } = body || {};
 
-    const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN
-    });
-
     // 1. Стиль
     const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
 
     // 2. Пользовательский текст
     const userPrompt = (text || "").trim();
 
-    // 3. Эффекты (кожа + мимика + при желании beauty-plus)
+    // 3. Эффекты (кожа + мимика)
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -135,7 +134,7 @@ export default async function handler(req, res) {
         .join(", ");
     }
 
-    // 4. Поздравление
+    // 4. Поздравление / DEMON-режим
     let greetingPrompt = "";
     if (greeting && GREETING_PROMPTS[greeting]) {
       greetingPrompt = GREETING_PROMPTS[greeting];
@@ -149,56 +148,19 @@ export default async function handler(req, res) {
 
     const prompt = promptParts.join(". ").trim();
 
-    // ----------------- ДВУХШАГОВАЯ ОБРАБОТКА -----------------
-
-    let conditioningImage = photo;
-
-    // Шаг 1: если есть фото — сначала восстанавливаем его через restore-image
-    if (photo) {
-      try {
-        const restoreOutput = await replicate.run(
-          "flux-kontext-apps/restore-image",
-          {
-            input: {
-              image: photo,
-              output_format: "png"
-            }
-          }
-        );
-
-        let restoredImage = null;
-
-        if (Array.isArray(restoreOutput)) {
-          restoredImage = restoreOutput[0];
-        } else if (restoreOutput?.output) {
-          if (Array.isArray(restoreOutput.output)) {
-            restoredImage = restoreOutput.output[0];
-          } else if (typeof restoreOutput.output === "string") {
-            restoredImage = restoreOutput.output;
-          }
-        } else if (typeof restoreOutput === "string") {
-          restoredImage = restoreOutput;
-        }
-
-        if (restoredImage) {
-          conditioningImage = restoredImage;
-        }
-      } catch (e) {
-        console.error("RESTORE-IMAGE ERROR:", e);
-        // Если реставрация упала — продолжаем с оригинальным photo
-        conditioningImage = photo;
-      }
-    }
-
-    // Шаг 2: финальная генерация через FLUX-Kontext-Pro
+    // 6. Вход для Replicate
     const input = {
       prompt,
       output_format: "jpg"
     };
 
-    if (conditioningImage) {
-      input.input_image = conditioningImage;
+    if (photo) {
+      input.input_image = photo;
     }
+
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN
+    });
 
     const output = await replicate.run(
       "black-forest-labs/flux-kontext-pro",
