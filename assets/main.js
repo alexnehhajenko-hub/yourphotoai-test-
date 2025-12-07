@@ -1,17 +1,11 @@
-// assets/main.js
-// Логика интерфейса для WindowToSoul тестового сайта
-// БЕЗ import, всё в одном файле, чтобы работало с <script src="./assets/main.js">
+// Simple front-end logic for YourPhotoAI test
 
-// --- СТЕЙТ ---
+let currentStyle = "beauty";
+const activeEffects = new Set();
+let currentGreeting = null;
+let resizedImageDataUrl = null;
 
-let currentStyle = "beauty";            // стиль портрета
-const activeEffects = new Set();        // эффекты кожи + мимики
-let currentGreeting = null;             // поздравление
-let originalImageFile = null;           // исходный файл фото
-let resizedImageDataUrl = null;         // уменьшенное фото base64
-
-// --- DOM-ЭЛЕМЕНТЫ ---
-
+// DOM
 const previewImage = document.getElementById("previewImage");
 const previewPlaceholder = document.getElementById("previewPlaceholder");
 const greetingOverlay = document.getElementById("greetingOverlay");
@@ -30,84 +24,54 @@ const btnPay = document.getElementById("btnPay");
 const downloadLink = document.getElementById("downloadLink");
 const fileInput = document.getElementById("fileInput");
 
-// sheet (панель снизу)
 const sheetBackdrop = document.getElementById("sheetBackdrop");
 const sheetTitle = document.getElementById("sheetTitle");
 const sheetDescription = document.getElementById("sheetDescription");
-const sheetCategoryTitle = document.getElementById("sheetCategoryTitle");
-const sheetCategoryRow = document.getElementById("sheetCategoryRow");
-const sheetOptionsTitle = document.getElementById("sheetOptionsTitle");
 const sheetOptionsRow = document.getElementById("sheetOptionsRow");
 const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 
-// --- КОНФИГ ВАРИАНТОВ ---
+// Options
 
-// Стили портрета (совпадают с STYLE_PREFIX в api/generate.js)
 const STYLE_OPTIONS = [
-  {
-    id: "beauty",
-    label: "Красивый портрет",
-    description: "Светлый, гладкая кожа, без морщин"
-  },
-  {
-    id: "oil",
-    label: "Картина маслом",
-    description: "Художественный стиль с мазками"
-  },
-  {
-    id: "anime",
-    label: "Аниме",
-    description: "Стиль аниме-персонажа"
-  },
-  {
-    id: "poster",
-    label: "Кино-постер",
-    description: "Контрастный, как в фильме"
-  },
-  {
-    id: "classic",
-    label: "Классический художник",
-    description: "Старые мастера"
-  }
+  { id: "beauty", label: "Beauty portrait", description: "Soft light, smoother skin" },
+  { id: "oil", label: "Oil painting", description: "Painterly brush strokes" },
+  { id: "anime", label: "Anime", description: "Stylized anime character" },
+  { id: "poster", label: "Movie poster", description: "Cinematic, dramatic" },
+  { id: "classic", label: "Classic master", description: "Old masters style" }
 ];
 
-// Эффекты кожи
 const SKIN_EFFECTS = [
-  { id: "no-wrinkles", label: "Убрать морщины", description: "Мягкая ретушь" },
-  { id: "younger", label: "Омолодить на 20 лет", description: "Минус ~20 лет" },
-  { id: "smooth-skin", label: "Сгладить кожу", description: "Ровный тон" }
+  { id: "no-wrinkles", label: "Remove wrinkles", description: "Soft retouch" },
+  { id: "younger", label: "Look younger", description: "Around -20 years" },
+  { id: "smooth-skin", label: "Smooth skin", description: "Even skin tone" }
 ];
 
-// Мимика
 const MIMIC_EFFECTS = [
-  { id: "smile-soft", label: "Лёгкая улыбка", description: "Спокойное настроение" },
-  { id: "smile-big", label: "Улыбка шире", description: "Больше эмоций" },
-  { id: "smile-hollywood", label: "Голливудская улыбка", description: "Видны зубы" },
-  { id: "laugh", label: "Смех", description: "Яркий смех" },
-  { id: "neutral", label: "Нейтральное лицо", description: "Спокойное" },
-  { id: "serious", label: "Серьёзное лицо", description: "Без улыбки" },
-  { id: "eyes-bigger", label: "Глаза больше", description: "Чуть крупнее" },
-  { id: "eyes-brighter", label: "Глаза ярче", description: "Выразительный взгляд" }
+  { id: "smile-soft", label: "Soft smile", description: "Calm mood" },
+  { id: "smile-big", label: "Big smile", description: "More emotions" },
+  { id: "smile-hollywood", label: "Hollywood smile", description: "Visible teeth" },
+  { id: "laugh", label: "Laugh", description: "Bright laughter" },
+  { id: "neutral", label: "Neutral", description: "Relaxed face" },
+  { id: "serious", label: "Serious", description: "No smile" },
+  { id: "eyes-bigger", label: "Bigger eyes", description: "Slightly larger" },
+  { id: "eyes-brighter", label: "Brighter eyes", description: "More expressive" }
 ];
 
-// Поздравления
 const GREETING_OPTIONS = [
-  { id: "new-year", label: "Новый год", description: "Новогодняя открытка" },
-  { id: "birthday", label: "День рождения", description: "Праздничный портрет" },
-  { id: "funny", label: "Смешное", description: "Игривый стиль" },
-  { id: "scary", label: "Страшное", description: "Жуткий стиль" }
+  { id: "new-year", label: "New Year", description: "Festive card" },
+  { id: "birthday", label: "Birthday", description: "Birthday card" },
+  { id: "funny", label: "Funny", description: "Playful style" },
+  { id: "scary", label: "Scary", description: "Horror style" }
 ];
 
-// --- УТИЛИТЫ ---
+// Helpers
 
 function openSheetFor(type) {
-  sheetCategoryTitle.style.display = "none";
-  sheetCategoryRow.style.display = "none";
   sheetOptionsRow.innerHTML = "";
 
   if (type === "style") {
-    sheetTitle.textContent = "Стиль портрета";
-    sheetDescription.textContent = "Выберите основной визуальный стиль портрета.";
+    sheetTitle.textContent = "Portrait style";
+    sheetDescription.textContent = "Choose main visual style.";
     STYLE_OPTIONS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
@@ -124,8 +88,8 @@ function openSheetFor(type) {
   }
 
   if (type === "skin") {
-    sheetTitle.textContent = "Эффекты кожи";
-    sheetDescription.textContent = "Можно выбрать несколько эффектов сразу.";
+    sheetTitle.textContent = "Skin effects";
+    sheetDescription.textContent = "You can choose several skin effects.";
     SKIN_EFFECTS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
@@ -147,8 +111,8 @@ function openSheetFor(type) {
   }
 
   if (type === "mimic") {
-    sheetTitle.textContent = "Мимика и эмоции";
-    sheetDescription.textContent = "Настройте настроение выражения лица.";
+    sheetTitle.textContent = "Expression";
+    sheetDescription.textContent = "Adjust mood and expression.";
     MIMIC_EFFECTS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
@@ -170,8 +134,8 @@ function openSheetFor(type) {
   }
 
   if (type === "greetings") {
-    sheetTitle.textContent = "Поздравления";
-    sheetDescription.textContent = "Выберите тип поздравительной открытки.";
+    sheetTitle.textContent = "Greetings";
+    sheetDescription.textContent = "Choose greeting card style.";
     GREETING_OPTIONS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
@@ -184,7 +148,6 @@ function openSheetFor(type) {
           chip.classList.remove("chip-active");
         } else {
           currentGreeting = opt.id;
-          // снять выделение с остальных
           sheetOptionsRow
             .querySelectorAll(".chip")
             .forEach((c) => c.classList.remove("chip-active"));
@@ -204,42 +167,37 @@ function closeSheet() {
   sheetBackdrop.classList.remove("sheet-open");
 }
 
-// Показываем выбранные параметры в верхнем ряду (чипы)
 function renderSelections() {
   selectionRow.innerHTML = "";
 
-  // Стиль
   const styleInfo = STYLE_OPTIONS.find((s) => s.id === currentStyle);
   if (styleInfo) {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
-    chip.textContent = `Стиль: ${styleInfo.label}`;
+    chip.textContent = `Style: ${styleInfo.label}`;
     selectionRow.appendChild(chip);
   }
 
-  // Эффекты
   if (activeEffects.size > 0) {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
-    chip.textContent = `Эффекты: ${activeEffects.size}`;
+    chip.textContent = `Effects: ${activeEffects.size}`;
     selectionRow.appendChild(chip);
   }
 
-  // Поздравление
   if (currentGreeting) {
     const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
     const chip = document.createElement("div");
     chip.className = "selection-chip";
-    chip.textContent = g ? `Поздравление: ${g.label}` : "Поздравление выбрано";
+    chip.textContent = g ? `Greeting: ${g.label}` : "Greeting selected";
     selectionRow.appendChild(chip);
   }
 }
 
-// Обновляем текстовую плашку поверх превью, если выбрано поздравление
 function updateGreetingOverlay() {
   if (!currentGreeting) {
-    greetingOverlay.textContent = "";
     greetingOverlay.style.display = "none";
+    greetingOverlay.textContent = "";
     return;
   }
   const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
@@ -247,7 +205,6 @@ function updateGreetingOverlay() {
   greetingOverlay.style.display = "block";
 }
 
-// Уменьшаем изображение до ~1024px по большей стороне
 function resizeImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -290,112 +247,98 @@ function resizeImage(file) {
   });
 }
 
-// --- ОБРАБОТЧИКИ ---
+// Handlers
 
-// Добавить фото
-if (btnAddPhoto && fileInput) {
-  btnAddPhoto.addEventListener("click", () => {
-    fileInput.click();
-  });
+btnAddPhoto.addEventListener("click", () => fileInput.click());
 
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
+fileInput.addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
 
-    originalImageFile = file;
+  try {
+    resizedImageDataUrl = await resizeImage(file);
+    previewImage.src = resizedImageDataUrl;
+    previewImage.style.display = "block";
+    previewPlaceholder.style.display = "none";
+  } catch (err) {
+    console.error("resize error", err);
+    alert("Failed to process photo: " + err.message);
+  }
+});
+
+btnStyle.addEventListener("click", () => openSheetFor("style"));
+btnSkin.addEventListener("click", () => openSheetFor("skin"));
+btnMimic.addEventListener("click", () => openSheetFor("mimic"));
+btnGreetings.addEventListener("click", () => openSheetFor("greetings"));
+
+sheetCloseBtn.addEventListener("click", closeSheet);
+sheetBackdrop.addEventListener("click", (e) => {
+  if (e.target === sheetBackdrop) closeSheet();
+});
+
+btnPay.addEventListener("click", () => {
+  alert("Payment is disabled in test mode.");
+});
+
+btnGenerate.addEventListener("click", async () => {
+  if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
+    alert("Add a photo or choose effects / greeting.");
+    return;
+  }
+
+  try {
+    btnGenerate.disabled = true;
+    controls.classList.add("controls-hidden");
+    generateStatus.style.display = "flex";
+    downloadLink.style.display = "none";
+
+    const body = {
+      style: currentStyle,
+      text: null,
+      photo: resizedImageDataUrl,
+      effects: Array.from(activeEffects),
+      greeting: currentGreeting
+    };
+
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    let data;
     try {
-      resizedImageDataUrl = await resizeImage(file);
-      previewImage.src = resizedImageDataUrl;
-      previewImage.style.display = "block";
-      previewPlaceholder.style.display = "none";
-    } catch (err) {
-      console.error("resize error", err);
-      alert("Не удалось обработать фото: " + err.message);
-    }
-  });
-}
-
-// Кнопки выбора категорий
-btnStyle && btnStyle.addEventListener("click", () => openSheetFor("style"));
-btnSkin && btnSkin.addEventListener("click", () => openSheetFor("skin"));
-btnMimic && btnMimic.addEventListener("click", () => openSheetFor("mimic"));
-btnGreetings && btnGreetings.addEventListener("click", () => openSheetFor("greetings"));
-
-sheetCloseBtn && sheetCloseBtn.addEventListener("click", closeSheet);
-sheetBackdrop &&
-  sheetBackdrop.addEventListener("click", (e) => {
-    if (e.target === sheetBackdrop) closeSheet();
-  });
-
-// Временно отключаем оплату на тесте
-btnPay &&
-  btnPay.addEventListener("click", () => {
-    alert("Оплата отключена в тестовом режиме.");
-  });
-
-// Генерация портрета
-btnGenerate &&
-  btnGenerate.addEventListener("click", async () => {
-    // простая валидация
-    if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
-      alert("Добавьте фото, выберите эффект или поздравление.");
-      return;
+      data = await res.json();
+    } catch {
+      throw new Error("Server returned invalid JSON.");
     }
 
-    try {
-      btnGenerate.disabled = true;
-      controls.classList.add("controls-hidden");
-      generateStatus.style.display = "flex";
-      downloadLink.style.display = "none";
-
-      const body = {
-        style: currentStyle,
-        text: null, // можно потом добавить поле для текста
-        photo: resizedImageDataUrl,
-        effects: Array.from(activeEffects),
-        greeting: currentGreeting
-      };
-
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        throw new Error("Сервер вернул некорректный ответ.");
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || data.message || String(res.status));
-      }
-
-      if (!data.image) {
-        throw new Error("Нет изображения от сервера.");
-      }
-
-      previewImage.src = data.image;
-      previewImage.style.display = "block";
-      previewPlaceholder.style.display = "none";
-
-      // включаем скачивание
-      downloadLink.href = data.image;
-      downloadLink.style.display = "inline-flex";
-    } catch (err) {
-      console.error("GEN ERROR", err);
-      alert("Ошибка генерации: " + (err.message || err));
-    } finally {
-      btnGenerate.disabled = false;
-      controls.classList.remove("controls-hidden");
-      generateStatus.style.display = "none";
+    if (!res.ok) {
+      throw new Error(data.error || data.message || String(res.status));
     }
-  });
 
-// Инициализация
+    if (!data.image) {
+      throw new Error("No image from server.");
+    }
+
+    previewImage.src = data.image;
+    previewImage.style.display = "block";
+    previewPlaceholder.style.display = "none";
+
+    downloadLink.href = data.image;
+    downloadLink.style.display = "inline-flex";
+  } catch (err) {
+    console.error("GEN ERROR", err);
+    alert("Generation error: " + (err.message || err));
+  } finally {
+    btnGenerate.disabled = false;
+    controls.classList.remove("controls-hidden");
+    generateStatus.style.display = "none";
+  }
+});
+
+// Init
+previewImage.style.display = "none";
+generateStatus.style.display = "none";
 renderSelections();
 updateGreetingOverlay();
-if (previewImage) previewImage.style.display = "none";
-if (generateStatus) generateStatus.style.display = "none";
