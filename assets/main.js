@@ -43,11 +43,13 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 // --- КОНФИГ ВАРИАНТОВ ---
 
 const STYLE_OPTIONS = [
-  { id: "beauty", label: "Красивый портрет", description: "Светлый, гладкая кожа, без морщин" },
-  { id: "oil",    label: "Картина маслом",   description: "Художественный стиль с мазками" },
-  { id: "anime",  label: "Аниме",            description: "Стиль аниме-персонажа" },
-  { id: "poster", label: "Кино-постер",      description: "Контрастный, как в фильме" },
-  { id: "classic",label: "Классический",     description: "Старые мастера" }
+  { id: "beauty",  label: "Красивый портрет",      description: "Светлый, гладкая кожа, без морщин" },
+  { id: "oil",     label: "Картина маслом",        description: "Художественный стиль с мазками" },
+  { id: "anime",   label: "Аниме",                 description: "Стиль аниме-персонажа" },
+  { id: "poster",  label: "Кино-постер",           description: "Контрастный, как в фильме" },
+  { id: "classic", label: "Классический",          description: "Старые мастера" },
+  // НОВОЕ: отдельный режим реставрации
+  { id: "restore", label: "Реставрация фото",      description: "Восстановление и лёгкая раскраска старых фото" }
 ];
 
 const SKIN_EFFECTS = [
@@ -190,14 +192,15 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  if (activeEffects.size > 0) {
+  if (activeEffects.size > 0 && currentStyle !== "restore") {
+    // В режиме реставрации эффекты игнорируем, чтобы не путать
     const chip = document.createElement("div");
     chip.className = "selection-chip";
     chip.textContent = `Эффекты: ${activeEffects.size}`;
     selectionRow.appendChild(chip);
   }
 
-  if (currentGreeting) {
+  if (currentGreeting && currentStyle !== "restore") {
     const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
     const chip = document.createElement("div");
     chip.className = "selection-chip";
@@ -207,7 +210,7 @@ function renderSelections() {
 }
 
 function updateGreetingOverlay() {
-  if (!currentGreeting) {
+  if (!currentGreeting || currentStyle === "restore") {
     greetingOverlay.textContent = "";
     greetingOverlay.style.display = "none";
     return;
@@ -295,22 +298,31 @@ btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
 
-// НОВОЕ: очистка эффектов и поздравлений
+// ОЧИСТКА эффектов и поздравлений
 if (btnClearEffects) {
   btnClearEffects.addEventListener("click", () => {
     activeEffects.clear();
     currentGreeting = null;
     renderSelections();
     updateGreetingOverlay();
-    // при следующем открытии sheet все чипы будут неактивны
   });
 }
 
 // Генерация
 btnGenerate.addEventListener("click", async () => {
-  if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
-    alert("Добавьте фото, выберите эффект или поздравление.");
-    return;
+  const isRestoreMode = currentStyle === "restore";
+
+  // Валидация входа
+  if (isRestoreMode) {
+    if (!resizedImageDataUrl) {
+      alert("Для реставрации нужно сначала добавить фото.");
+      return;
+    }
+  } else {
+    if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
+      alert("Добавьте фото, выберите эффект или поздравление.");
+      return;
+    }
   }
 
   try {
@@ -319,19 +331,34 @@ btnGenerate.addEventListener("click", async () => {
     generateStatus.style.display = "flex";
     downloadLink.style.display = "none";
 
-    const body = {
-      style: currentStyle,
-      text: null,
-      photo: resizedImageDataUrl,
-      effects: Array.from(activeEffects),
-      greeting: currentGreeting
-    };
+    let res;
+    if (isRestoreMode) {
+      // Режим реставрации — отдельный endpoint и только фото
+      const body = {
+        photo: resizedImageDataUrl
+      };
 
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
+      res = await fetch("/api/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // Обычная генерация портрета
+      const body = {
+        style: currentStyle,
+        text: null,
+        photo: resizedImageDataUrl,
+        effects: Array.from(activeEffects),
+        greeting: currentGreeting
+      };
+
+      res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+    }
 
     let data;
     try {
