@@ -1,4 +1,7 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
+// ДВУХШАГОВАЯ СХЕМА:
+// 1) flux-kontext-apps/restore-image — восстанавливает лицо, чистит артефакты, сохраняет черты
+// 2) black-forest-labs/flux-kontext-pro — рисует финальный портрет по стилю/эффектам/поздравлению
 // Фото / текст / эффекты кожи / мимика / поздравления
 // Без возврата prompt на фронт
 
@@ -7,60 +10,54 @@ import Replicate from "replicate";
 // Стили — подчёркиваем, что это ЛУЧШАЯ ВЕРСИЯ ЭТОГО ЖЕ ЧЕЛОВЕКА
 const STYLE_PREFIX = {
   // Главный стиль: улучшенная версия того же человека
-  beauty:
-    [
-      "highly realistic studio portrait of the SAME person as in the input photo",
-      "this is the BEST IMPROVED VERSION of this person, not a different model",
-      "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
-      "same gender, same ethnicity, same overall personality",
-      "age stays similar (no more than about 5–10 years younger), do NOT turn them into a teenager or a completely different age",
-      "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
-      "keep realistic skin texture and pores, no plastic skin, no doll face",
-      "do NOT change bone structure or completely change the face",
-      "natural healthy look, gentle flattering light, neutral soft background",
-      "they look like themselves on their very best day in real life"
-    ].join(", "),
+  beauty: [
+    "highly realistic studio portrait of the SAME person as in the input photo",
+    "this is the BEST IMPROVED VERSION of this person, not a different model",
+    "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
+    "same gender, same ethnicity, same overall personality",
+    "age stays similar (no more than 5–10 years younger), do NOT turn them into a teenager or a completely different age",
+    "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
+    "keep realistic skin texture and pores, no plastic skin, no doll face",
+    "do NOT change bone structure or completely change the face",
+    "natural healthy look, gentle flattering light, neutral soft background",
+    "they look like themselves on their very best day in real life"
+  ].join(", "),
 
   // Художественная картина маслом
-  oil:
-    [
-      "oil painting portrait of the SAME person as in the input photo",
-      "keep the same face identity and proportions, recognisably the same person",
-      "same gender, same ethnicity, similar age",
-      "painterly brush strokes, canvas texture, rich warm colors",
-      "gentle improvement only, not a new face"
-    ].join(", "),
+  oil: [
+    "oil painting portrait of the SAME person as in the input photo",
+    "keep the same face identity and proportions, recognisably the same person",
+    "same gender, same ethnicity, similar age",
+    "painterly brush strokes, canvas texture, rich warm colors",
+    "gentle improvement only, not a new face"
+  ].join(", "),
 
-  anime:
-    [
-      "anime style portrait of the SAME person as in the input photo",
-      "translate their recognisable facial features into anime style",
-      "same gender and ethnicity, similar age",
-      "clean lines, soft shading, gentle colors"
-    ].join(", "),
+  anime: [
+    "anime style portrait of the SAME person as in the input photo",
+    "translate their recognisable facial features into anime style",
+    "same gender and ethnicity, similar age",
+    "clean lines, soft shading, gentle colors"
+  ].join(", "),
 
-  poster:
-    [
-      "cinematic movie poster portrait of the SAME person as in the input photo",
-      "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
-      "same gender, same ethnicity, similar age",
-      "dramatic lighting, slightly stylized but still clearly the same person"
-    ].join(", "),
+  poster: [
+    "cinematic movie poster portrait of the SAME person as in the input photo",
+    "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
+    "same gender, same ethnicity, similar age",
+    "dramatic lighting, slightly stylized but still clearly the same person"
+  ].join(", "),
 
-  classic:
-    [
-      "classical old master realistic portrait of the SAME person as in the input photo",
-      "keep the same face, same gender and ethnicity, similar age",
-      "warm tones, detailed skin, painterly background",
-      "gentle beautification without changing who the person is"
-    ].join(", "),
+  classic: [
+    "classical old master realistic portrait of the SAME person as in the input photo",
+    "keep the same face, same gender and ethnicity, similar age",
+    "warm tones, detailed skin, painterly background",
+    "gentle beautification without changing who the person is"
+  ].join(", "),
 
-  default:
-    [
-      "realistic portrait of the SAME person as in the input photo",
-      "keep exact facial identity and proportions",
-      "subtle natural beauty retouch only, soft studio lighting"
-    ].join(", ")
+  default: [
+    "realistic portrait of the SAME person as in the input photo",
+    "keep exact facial identity and proportions",
+    "subtle natural beauty retouch only, soft studio lighting"
+  ].join(", ")
 };
 
 // Эффекты обработки кожи + мимика
@@ -82,7 +79,11 @@ const EFFECT_PROMPTS = {
   neutral: "neutral relaxed face expression, no strong emotion",
   serious: "serious face, no smile, focused expression",
   "eyes-bigger": "slightly bigger and more open eyes, but still realistic",
-  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
+  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze",
+
+  // опционально: Beauty+ как дополнительный эффект
+  "beauty-plus":
+    "slightly enhanced beauty, smoother skin, brighter eyes, still clearly the same person"
 };
 
 // Поздравления — стиль + факт русской надписи
@@ -115,13 +116,17 @@ export default async function handler(req, res) {
 
     const { style, text, photo, effects, greeting } = body || {};
 
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN
+    });
+
     // 1. Стиль
     const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
 
     // 2. Пользовательский текст
     const userPrompt = (text || "").trim();
 
-    // 3. Эффекты (кожа + мимика)
+    // 3. Эффекты (кожа + мимика + при желании beauty-plus)
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -144,19 +149,56 @@ export default async function handler(req, res) {
 
     const prompt = promptParts.join(". ").trim();
 
-    // 6. Вход для Replicate
+    // ----------------- ДВУХШАГОВАЯ ОБРАБОТКА -----------------
+
+    let conditioningImage = photo;
+
+    // Шаг 1: если есть фото — сначала восстанавливаем его через restore-image
+    if (photo) {
+      try {
+        const restoreOutput = await replicate.run(
+          "flux-kontext-apps/restore-image",
+          {
+            input: {
+              image: photo,
+              output_format: "png"
+            }
+          }
+        );
+
+        let restoredImage = null;
+
+        if (Array.isArray(restoreOutput)) {
+          restoredImage = restoreOutput[0];
+        } else if (restoreOutput?.output) {
+          if (Array.isArray(restoreOutput.output)) {
+            restoredImage = restoreOutput.output[0];
+          } else if (typeof restoreOutput.output === "string") {
+            restoredImage = restoreOutput.output;
+          }
+        } else if (typeof restoreOutput === "string") {
+          restoredImage = restoreOutput;
+        }
+
+        if (restoredImage) {
+          conditioningImage = restoredImage;
+        }
+      } catch (e) {
+        console.error("RESTORE-IMAGE ERROR:", e);
+        // Если реставрация упала — продолжаем с оригинальным photo
+        conditioningImage = photo;
+      }
+    }
+
+    // Шаг 2: финальная генерация через FLUX-Kontext-Pro
     const input = {
       prompt,
       output_format: "jpg"
     };
 
-    if (photo) {
-      input.input_image = photo;
+    if (conditioningImage) {
+      input.input_image = conditioningImage;
     }
-
-    const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN
-    });
 
     const output = await replicate.run(
       "black-forest-labs/flux-kontext-pro",
