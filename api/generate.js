@@ -8,11 +8,11 @@ import Replicate from "replicate";
 const STYLE_PREFIX = {
   // Новый стиль: светлый, гладкая кожа, без морщин, бьюти-портрет
   beauty:
-    "realistic portrait of the same person as in the reference photo, same face structure and proportions, same age and gender, soft beauty portrait, studio lighting, bright airy tones, smooth flawless skin, no wrinkles, gentle high-end retouch, subtle glow, k-beauty style, pastel background, flattering look",
+    "realistic portrait of the same person as in the reference photo, same facial structure and proportions, same age and gender, soft beauty portrait, studio lighting, bright airy tones, smooth flawless skin, no wrinkles, gentle high-end retouch, subtle glow, k-beauty style, pastel background, flattering look",
 
   // Художественная картина маслом
   oil:
-    "realistic oil painting portrait of the same person as in the reference photo, same face structure and proportions, dramatic oil painting style, visible thick brush strokes, rich oil paint texture, canvas texture, painterly background, slightly stylized but clearly the same person, warm tones",
+    "realistic oil painting portrait of the same person as in the reference photo, same facial structure and proportions, dramatic oil painting style, visible thick brush strokes, rich oil paint texture, canvas texture, painterly background, slightly stylized but clearly the same person, warm tones",
 
   anime:
     "anime style portrait of the same person as in the reference photo, same face shape and proportions, recognizable facial features, clean lines, soft pastel shading",
@@ -23,9 +23,9 @@ const STYLE_PREFIX = {
   classic:
     "classical old master portrait of the same person as in the reference photo, same facial structure, realism, warm tones, detailed skin, painting by an old master",
 
-  // НОВЫЙ СТИЛЬ: Демон, но с сохранением черт лица
+  // НОВЫЙ СТИЛЬ: Demon — зал с синим огнём и светящимися глазами
   demon:
-    "demonic version of the same person as in the reference photo, strictly keep the same facial structure, proportions, and identity, do not change gender or age, add subtle demonic features like small horns, slightly glowing eyes, darker fantasy lighting, gothic atmosphere, but the face is clearly the same person, ultra detailed, cinematic dark fantasy portrait",
+    "dark fantasy demonic portrait of the same person as in the reference photo, strictly keep the same facial structure, proportions and identity, do not change gender or age, set in a gothic hall lit by glowing blue fire, blue flames on torches and in the background, soft volumetric light from the blue fire, the person's eyes have a subtle blue magical glow, not too strong, cinematic composition, ultra detailed skin and hair, high-end dark fantasy artwork",
 
   default:
     "realistic portrait of the same person as in the reference photo, strictly keep original facial structure, proportions and identity, soft studio lighting"
