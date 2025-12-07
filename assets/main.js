@@ -25,13 +25,13 @@ const btnGreetings = document.getElementById("btnGreetings");
 const btnGenerate = document.getElementById("btnGenerate");
 const btnAddPhoto = document.getElementById("btnAddPhoto");
 const btnPay = document.getElementById("btnPay");
+const btnClearEffects = document.getElementById("btnClearEffects");
 
 const downloadLink = document.getElementById("downloadLink");
 const fileInput = document.getElementById("fileInput");
 
 // sheet (панель снизу)
 const sheetBackdrop = document.getElementById("sheetBackdrop");
-const sheet = document.querySelector(".sheet");
 const sheetTitle = document.getElementById("sheetTitle");
 const sheetDescription = document.getElementById("sheetDescription");
 const sheetCategoryTitle = document.getElementById("sheetCategoryTitle");
@@ -42,65 +42,36 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 
 // --- КОНФИГ ВАРИАНТОВ ---
 
-// Стили портрета (совпадают с STYLE_PREFIX в api/generate.js)
 const STYLE_OPTIONS = [
-  {
-    id: "beauty",
-    label: "Красивый портрет",
-    description: "Светлый, гладкая кожа, без морщин"
-  },
-  {
-    id: "oil",
-    label: "Картина маслом",
-    description: "Художественный стиль с мазками"
-  },
-  {
-    id: "anime",
-    label: "Аниме",
-    description: "Стиль аниме-персонажа"
-  },
-  {
-    id: "poster",
-    label: "Кино-постер",
-    description: "Контрастный, как в фильме"
-  },
-  {
-    id: "classic",
-    label: "Классический художник",
-    description: "Старые мастера"
-  },
-  {
-    id: "demon",
-    label: "Демон-переделка",
-    description: "Тёмный фэнтези-стиль, тот же человек с демоническими деталями"
-  }
+  { id: "beauty", label: "Красивый портрет", description: "Светлый, гладкая кожа, без морщин" },
+  { id: "oil",    label: "Картина маслом",   description: "Художественный стиль с мазками" },
+  { id: "anime",  label: "Аниме",            description: "Стиль аниме-персонажа" },
+  { id: "poster", label: "Кино-постер",      description: "Контрастный, как в фильме" },
+  { id: "classic",label: "Классический",     description: "Старые мастера" }
 ];
 
-// Эффекты кожи
 const SKIN_EFFECTS = [
-  { id: "no-wrinkles", label: "Убрать морщины", description: "Мягкая ретушь" },
-  { id: "younger", label: "Омолодить на 20 лет", description: "Минус ~20 лет" },
-  { id: "smooth-skin", label: "Сгладить кожу", description: "Ровный тон" }
+  { id: "no-wrinkles", label: "Убрать морщины",      description: "Мягкая ретушь" },
+  { id: "younger",     label: "Омолодить на 20 лет", description: "Минус ~20 лет" },
+  { id: "smooth-skin", label: "Сгладить кожу",       description: "Ровный тон" }
 ];
 
-// Мимика
 const MIMIC_EFFECTS = [
-  { id: "smile-soft", label: "Лёгкая улыбка", description: "Спокойное настроение" },
-  { id: "smile-big", label: "Улыбка шире", description: "Больше эмоций" },
-  { id: "smile-hollywood", label: "Голливудская улыбка", description: "Видны зубы" },
-  { id: "laugh", label: "Смех", description: "Яркий смех" },
-  { id: "neutral", label: "Нейтральное лицо", description: "Спокойное" },
-  { id: "serious", label: "Серьёзное лицо", description: "Без улыбки" },
-  { id: "eyes-bigger", label: "Глаза больше", description: "Чуть крупнее" },
-  { id: "eyes-brighter", label: "Глаза ярче", description: "Выразительный взгляд" }
+  { id: "smile-soft",      label: "Лёгкая улыбка",        description: "Спокойное настроение" },
+  { id: "smile-big",       label: "Улыбка шире",          description: "Больше эмоций" },
+  { id: "smile-hollywood", label: "Голливудская улыбка",  description: "Видны зубы" },
+  { id: "laugh",           label: "Смех",                 description: "Яркий смех" },
+  { id: "neutral",         label: "Нейтральное лицо",     description: "Спокойное" },
+  { id: "serious",         label: "Серьёзное лицо",       description: "Без улыбки" },
+  { id: "eyes-bigger",     label: "Глаза больше",         description: "Чуть крупнее" },
+  { id: "eyes-brighter",   label: "Глаза ярче",           description: "Выразительный взгляд" }
 ];
 
-// Поздравления
 const GREETING_OPTIONS = [
-  { id: "new-year", label: "Новый год", description: "Новогодняя открытка" },
-  { id: "birthday", label: "День рождения", description: "Праздничный портрет" },
-  { id: "funny", label: "Смешное", description: "Игривый стиль" },
-  { id: "scary", label: "Страшное", description: "Жуткий стиль" }
+  { id: "new-year", label: "Новый год",      description: "Новогодняя открытка" },
+  { id: "birthday", label: "День рождения",  description: "Праздничный портрет" },
+  { id: "funny",    label: "Смешное",        description: "Игривый стиль" },
+  { id: "scary",    label: "Страшное",       description: "Жуткий стиль" }
 ];
 
 // --- УТИЛИТЫ ---
@@ -189,7 +160,6 @@ function openSheetFor(type) {
           chip.classList.remove("chip-active");
         } else {
           currentGreeting = opt.id;
-          // снять выделение с остальных
           sheetOptionsRow
             .querySelectorAll(".chip")
             .forEach((c) => c.classList.remove("chip-active"));
@@ -209,11 +179,9 @@ function closeSheet() {
   sheetBackdrop.classList.remove("sheet-open");
 }
 
-// Показываем выбранные параметры в верхнем ряду (чипы)
 function renderSelections() {
   selectionRow.innerHTML = "";
 
-  // Стиль
   const styleInfo = STYLE_OPTIONS.find((s) => s.id === currentStyle);
   if (styleInfo) {
     const chip = document.createElement("div");
@@ -222,7 +190,6 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  // Эффекты
   if (activeEffects.size > 0) {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
@@ -230,7 +197,6 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  // Поздравление
   if (currentGreeting) {
     const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
     const chip = document.createElement("div");
@@ -240,7 +206,6 @@ function renderSelections() {
   }
 }
 
-// Обновляем текстовую плашку поверх превью, если выбрано поздравление
 function updateGreetingOverlay() {
   if (!currentGreeting) {
     greetingOverlay.textContent = "";
@@ -252,7 +217,6 @@ function updateGreetingOverlay() {
   greetingOverlay.style.display = "block";
 }
 
-// Уменьшаем изображение до ~1024px по большей стороне
 function resizeImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -297,7 +261,6 @@ function resizeImage(file) {
 
 // --- ОБРАБОТЧИКИ ---
 
-// Добавить фото
 btnAddPhoto.addEventListener("click", () => {
   fileInput.click();
 });
@@ -318,7 +281,6 @@ fileInput.addEventListener("change", async (e) => {
   }
 });
 
-// Кнопки выбора категорий
 btnStyle.addEventListener("click", () => openSheetFor("style"));
 btnSkin.addEventListener("click", () => openSheetFor("skin"));
 btnMimic.addEventListener("click", () => openSheetFor("mimic"));
@@ -329,14 +291,23 @@ sheetBackdrop.addEventListener("click", (e) => {
   if (e.target === sheetBackdrop) closeSheet();
 });
 
-// Временно отключаем оплату на тесте
 btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
 
-// Генерация портрета
+// НОВОЕ: очистка эффектов и поздравлений
+if (btnClearEffects) {
+  btnClearEffects.addEventListener("click", () => {
+    activeEffects.clear();
+    currentGreeting = null;
+    renderSelections();
+    updateGreetingOverlay();
+    // при следующем открытии sheet все чипы будут неактивны
+  });
+}
+
+// Генерация
 btnGenerate.addEventListener("click", async () => {
-  // простая валидация
   if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
     alert("Добавьте фото, выберите эффект или поздравление.");
     return;
@@ -350,7 +321,7 @@ btnGenerate.addEventListener("click", async () => {
 
     const body = {
       style: currentStyle,
-      text: null, // можно потом добавить поле для текста
+      text: null,
       photo: resizedImageDataUrl,
       effects: Array.from(activeEffects),
       greeting: currentGreeting
@@ -381,7 +352,6 @@ btnGenerate.addEventListener("click", async () => {
     previewImage.style.display = "block";
     previewPlaceholder.style.display = "none";
 
-    // включаем скачивание
     downloadLink.href = data.image;
     downloadLink.style.display = "inline-flex";
   } catch (err) {
