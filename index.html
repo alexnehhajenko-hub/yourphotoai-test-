@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8">
@@ -15,7 +15,7 @@
     </header>
 
     <section class="preview-box">
-      <div class="preview-label">Предпросмотр</div>
+      <div class="preview-label">PREVIEW</div>
 
       <img id="previewImage" class="preview-image" alt="Preview">
 
@@ -32,12 +32,11 @@
       </div>
     </section>
 
+    <!-- Чипы с выбранными параметрами -->
+    <div class="selection-row" id="selectionRow"></div>
+
     <!-- Кнопки и выбранные эффекты (будут скрываться при генерации) -->
     <div class="controls" id="controls">
-      <div class="selection-row" id="selectionRow">
-        <!-- сюда JS добавляет чипы с выбранными параметрами -->
-      </div>
-
       <section class="button-list">
         <button class="btn-main" id="btnStyle">
           <span class="btn-icon">🎨</span>
@@ -59,8 +58,8 @@
           <span>Поздравления</span>
         </button>
 
-        <!-- НОВОЕ: VIP-кнопка -->
-        <button class="btn-main" id="btnVip">
+        <!-- НОВОЕ: отдельный VIP-режим гравитации -->
+        <button class="btn-main" id="btnVipGravity">
           <span class="btn-icon">💎</span>
           <span>VIP-гравитация</span>
         </button>
@@ -81,13 +80,11 @@
           </button>
         </div>
 
-        <!-- Опционально: кнопка очистки эффектов (если захочешь добавить стиль) -->
-        <!--
+        <!-- Кнопка сброса эффектов -->
         <button class="btn-main btn-clear" id="btnClearEffects">
           <span class="btn-icon">🧹</span>
           <span>Сбросить эффекты</span>
         </button>
-        -->
       </section>
     </div>
 
@@ -97,7 +94,7 @@
         id="downloadLink"
         class="btn-download"
         href="#"
-        download="windowtosoul-portrait.png"
+        download="windowtosoul-portrait.jpg"
         style="display: none;"
       >
         Скачать портрет
@@ -122,7 +119,7 @@
       </div>
       <div class="sheet-description" id="sheetDescription"></div>
 
-      <!-- Для категорий (если понадобятся) -->
+      <!-- Для категорий (если потребуется) -->
       <div class="sheet-section-title" id="sheetCategoryTitle" style="display:none;">Категории</div>
       <div class="chip-row" id="sheetCategoryRow" style="display:none;"></div>
 
