@@ -4,78 +4,31 @@
 
 import Replicate from "replicate";
 
-// СТИЛИ
-// beauty   — мягкая ретушь того же человека
-// demon    — огненный ритуал со свечой
-// order    — эпический фэнтези-портрет "Орден Тишины"
-// gravity  — реалистичный портрет в комнате с нарушенной гравитацией
-// остальные — художественные стили
+// Стили — подчёркиваем, что это ЛУЧШАЯ ВЕРСИЯ ЭТОГО ЖЕ ЧЕЛОВЕКА
 const STYLE_PREFIX = {
-  // 1. КРАСИВЫЙ ПОРТРЕТ (строгий режим, только ретушь)
+  // Главный стиль: улучшенная версия того же человека
   beauty: [
-    "ultra realistic studio portrait RETOUCH of the SAME person as in the input photo",
-    "this must look like the SAME photo professionally retouched in Photoshop, not a new person",
-    "preserve identity: same face shape, same skull and head proportions, same nose, same lips, same jawline, same distance between facial features",
-    "same gender, same ethnicity, same haircut and hair length (if bald, stay bald, do NOT add hair)",
-    "age stays almost the same, at most about 5 years younger, never a teenager or a different age group",
-    "subtle beauty improvement only: reduce eye bags and puffiness, soften dark circles, smooth small wrinkles on face and neck, slightly more even skin tone",
-    "keep realistic skin texture and pores, no plastic doll skin",
-    "no change of bone structure, no change of fundamental face geometry",
-    "neutral soft background, soft flattering light, natural color balance",
-    "overall result: they look like themselves on their very best real day, not a different model"
+    "highly realistic studio portrait of the SAME person as in the input photo",
+    "this is the BEST IMPROVED VERSION of this person, not a different model",
+    "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
+    "same gender, same ethnicity, same overall personality",
+    "age stays similar (no more than about 5–10 years younger), do NOT turn them into a teenager or a completely different age",
+    "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
+    "keep realistic skin texture and pores, no plastic skin, no doll face",
+    "do NOT change bone structure or completely change the face",
+    "natural healthy look, gentle flattering light, neutral soft background",
+    "they look like themselves on their very best day in real life"
   ].join(", "),
 
-  // 2. ДЕМОН / РИТУАЛ СО СВЕЧОЙ
-  demon: [
-    "dramatic cinematic portrait of the SAME person as in the input photo",
-    "preserve identity strictly: same gender, same ethnicity, same face structure, same head shape and proportions",
-    "do NOT change the person, only the scene, lighting and expression",
-    "dark ritual room, warm candlelight in front of them, bowl or cup with fire",
-    "subtle blue or orange glowing embers and particles in the air",
-    "slightly glowing eyes with soft colored light (not fully white, still human and recognizable)",
-    "moody low key lighting, strong contrast between face and dark background",
-    "gentle beauty retouch only, keep realistic skin and real-world proportions"
-  ].join(", "),
-
-  // 3. ЭПИЧЕСКИЙ ФЭНТЕЗИ-ПОРТРЕТ "ОРДЕН ТИШИНЫ"
-  order: [
-    "epic fantasy portrait of the SAME person as in the input photo",
-    "they are the grandmaster of a secret order called 'Order of Silence'",
-    "preserve identity: same face structure, same skull and head proportions, same nose, same lips, same jawline, same distance between facial features",
-    "same gender and ethnicity as in the input, similar age, clearly the same person in a different outfit",
-    "wearing elegant dark robes with subtle silver embroidery",
-    "order's symbol integrated into jewelry and fabric, softly glowing sigils",
-    "background: vast dim hall with tall columns, banners and floating symbols of silence in the air",
-    "soft directional cinematic light on the face, hyper detailed fabrics and face",
-    "concept art for AAA RPG, high resolution, dramatic but still realistic",
-    "gentle beauty enhancement only, do NOT replace the person with a generic model"
-  ].join(", "),
-
-  // 4. НАРУШЕННАЯ ГРАВИТАЦИЯ (комната)
-  gravity: [
-    "realistic portrait of the SAME person as in the input photo",
-    "preserve identity strictly: same face shape, same skull and head proportions, same nose, lips, jawline, eye distance and overall geometry",
-    "same gender and ethnicity, similar age, clearly the same person",
-    "in a room where gravity is subtly broken",
-    "their hair gently flows upward or sideways as if floating",
-    "small objects around them float mid-air",
-    "coffee splashes sideways from a cup, papers slowly drifting around",
-    "light coming from the floor as a softly glowing pool of light",
-    "calm confident expression",
-    "ultra realistic impossible physics photo, 8k look, soft cinematic colors",
-    "gentle beauty enhancement only, do NOT turn them into a different model"
-  ].join(", "),
-
-  // 5. Картина маслом
+  // Художественная картина маслом
   oil: [
     "oil painting portrait of the SAME person as in the input photo",
-    "keep the same identity and proportions, clearly the same person",
+    "keep the same face identity and proportions, recognisably the same person",
     "same gender, same ethnicity, similar age",
     "painterly brush strokes, canvas texture, rich warm colors",
     "gentle improvement only, not a new face"
   ].join(", "),
 
-  // 6. Аниме
   anime: [
     "anime style portrait of the SAME person as in the input photo",
     "translate their recognisable facial features into anime style",
@@ -83,7 +36,6 @@ const STYLE_PREFIX = {
     "clean lines, soft shading, gentle colors"
   ].join(", "),
 
-  // 7. Кино-постер
   poster: [
     "cinematic movie poster portrait of the SAME person as in the input photo",
     "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
@@ -91,7 +43,6 @@ const STYLE_PREFIX = {
     "dramatic lighting, slightly stylized but still clearly the same person"
   ].join(", "),
 
-  // 8. Классика
   classic: [
     "classical old master realistic portrait of the SAME person as in the input photo",
     "keep the same face, same gender and ethnicity, similar age",
@@ -99,15 +50,14 @@ const STYLE_PREFIX = {
     "gentle beautification without changing who the person is"
   ].join(", "),
 
-  // Режим по умолчанию
   default: [
     "realistic portrait of the SAME person as in the input photo",
-    "preserve identity and proportions",
+    "keep exact facial identity and proportions",
     "subtle natural beauty retouch only, soft studio lighting"
   ].join(", ")
 };
 
-// ЭФФЕКТЫ
+// Эффекты обработки кожи + мимика + спец-сцены
 const EFFECT_PROMPTS = {
   // кожа
   "no-wrinkles":
@@ -126,7 +76,17 @@ const EFFECT_PROMPTS = {
   neutral: "neutral relaxed face expression, no strong emotion",
   serious: "serious face, no smile, focused expression",
   "eyes-bigger": "slightly bigger and more open eyes, but still realistic",
-  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
+  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze",
+
+  // спец-сцена: нарушенная гравитация
+  "gravity-room": [
+    "the SAME person from the input photo in a surreal room with subtly broken gravity",
+    "hair gently flows upward, small objects around float in mid-air",
+    "coffee splashes sideways, papers slowly drifting",
+    "light comes from a glowing pool on the floor",
+    "impossible physics, soft cinematic colors",
+    "FACE IDENTITY MUST STAY THE SAME, do not change who the person is"
+  ].join(", ")
 };
 
 // Поздравления — стиль + факт русской надписи
@@ -165,7 +125,7 @@ export default async function handler(req, res) {
     // 2. Пользовательский текст
     const userPrompt = (text || "").trim();
 
-    // 3. Эффекты (кожа + мимика)
+    // 3. Эффекты (кожа + мимика + сцены)
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -202,10 +162,9 @@ export default async function handler(req, res) {
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const output = await replicate.run(
-      "black-forest-labs/flux-kontext-pro",
-      { input }
-    );
+    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
+      input
+    });
 
     // Поиск URL
     let imageUrl = null;
