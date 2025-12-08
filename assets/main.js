@@ -3,11 +3,14 @@
 
 // --- СТЕЙТ ---
 
-let currentStyle = "beauty";            // стиль портрета
-const activeEffects = new Set();        // эффекты кожи + мимики + сцены
+let currentStyle = "beauty";            // обычный стиль портрета
+const activeEffects = new Set();        // эффекты кожи + мимика
 let currentGreeting = null;             // поздравление
 let originalImageFile = null;           // исходный файл фото
 let resizedImageDataUrl = null;         // уменьшенное фото base64
+
+// VIP-режим: null = выключен, иначе id одного из режимов
+let currentVipMode = null;
 
 // --- DOM-ЭЛЕМЕНТЫ ---
 
@@ -22,7 +25,7 @@ const btnStyle = document.getElementById("btnStyle");
 const btnSkin = document.getElementById("btnSkin");
 const btnMimic = document.getElementById("btnMimic");
 const btnGreetings = document.getElementById("btnGreetings");
-const btnVipGravity = document.getElementById("btnVipGravity");
+const btnVip = document.getElementById("btnVip");
 const btnGenerate = document.getElementById("btnGenerate");
 const btnAddPhoto = document.getElementById("btnAddPhoto");
 const btnPay = document.getElementById("btnPay");
@@ -44,11 +47,11 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 // --- КОНФИГ ВАРИАНТОВ ---
 
 const STYLE_OPTIONS = [
-  { id: "beauty",  label: "Красивый портрет", description: "Светлый, гладкая кожа, без морщин" },
-  { id: "oil",     label: "Картина маслом",   description: "Художественный стиль с мазками" },
-  { id: "anime",   label: "Аниме",            description: "Стиль аниме-персонажа" },
-  { id: "poster",  label: "Кино-постер",      description: "Контрастный, как в фильме" },
-  { id: "classic", label: "Классический",     description: "Старые мастера" }
+  { id: "beauty",  label: "Красивый портрет",  description: "Светлый, гладкая кожа, без морщин" },
+  { id: "oil",     label: "Картина маслом",    description: "Художественный стиль с мазками" },
+  { id: "anime",   label: "Аниме",             description: "Стиль аниме-персонажа" },
+  { id: "poster",  label: "Кино-постер",       description: "Контрастный, как в фильме" },
+  { id: "classic", label: "Классический",      description: "Старые мастера" }
 ];
 
 const SKIN_EFFECTS = [
@@ -73,6 +76,21 @@ const GREETING_OPTIONS = [
   { id: "birthday", label: "День рождения",  description: "Праздничный портрет" },
   { id: "funny",    label: "Смешное",        description: "Игривый стиль" },
   { id: "scary",    label: "Страшное",       description: "Жуткий стиль" }
+];
+
+// VIP-режимы (id должны совпадать с VIP_SCENES в api/generate-vip1.js)
+const VIP_OPTIONS = [
+  { id: "gravity",      label: "VIP: Гравитация",        description: "Комната с нарушенной гравитацией" },
+  { id: "knight",       label: "VIP: Орден тишины",      description: "Фэнтези-рыцарь, орден тишины" },
+  { id: "cinema",       label: "VIP: Кино-кадр",         description: "Кадр из дорогого фильма" },
+  { id: "time_gradient",label: "VIP: Время",             description: "От молодого к взрослому в одном лице" },
+  { id: "crime_board",  label: "VIP: Доска улик",        description: "Детективная доска с фотографиями" },
+  { id: "notifications",label: "VIP: Уведомления",       description: "Комната из уведомлений и чатов" },
+  { id: "multiverse",   label: "VIP: Мультивселенная",   description: "3–4 версии жизни рядом" },
+  { id: "future_phone", label: "VIP: Телефон 2525",      description: "Портрет из будущего со светящимися иконками" },
+  { id: "art_timeline", label: "VIP: Стена искусств",    description: "Стена из разных эпох искусства" },
+  { id: "starry_hair",  label: "VIP: Звёздные волосы",   description: "Волосы переходят в звёздное небо" },
+  { id: "angel_devil",  label: "VIP: Ангел и демон",     description: "По центру человек, слева ангел, справа демон" }
 ];
 
 // --- УТИЛИТЫ ---
@@ -124,7 +142,7 @@ function openSheetFor(type) {
   }
 
   if (type === "mimic") {
-    sheetTitle.textContent = "Мимика";
+    sheetTitle.textContent = "Мимика и эмоции";
     sheetDescription.textContent = "Настройте настроение выражения лица.";
     MIMIC_EFFECTS.forEach((opt) => {
       const chip = document.createElement("button");
@@ -173,6 +191,34 @@ function openSheetFor(type) {
     });
   }
 
+  if (type === "vip") {
+    sheetTitle.textContent = "VIP-портреты";
+    sheetDescription.textContent =
+      "Специальные сцены (кино, рыцарь, мультивселенная и т.п.). Лицо остаётся тем же человеком.";
+    VIP_OPTIONS.forEach((opt) => {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = opt.label;
+      chip.title = opt.description;
+      if (currentVipMode === opt.id) chip.classList.add("chip-active");
+      chip.onclick = () => {
+        // повторное нажатие — выключаем VIP
+        if (currentVipMode === opt.id) {
+          currentVipMode = null;
+          chip.classList.remove("chip-active");
+        } else {
+          currentVipMode = opt.id;
+          sheetOptionsRow
+            .querySelectorAll(".chip")
+            .forEach((c) => c.classList.remove("chip-active"));
+          chip.classList.add("chip-active");
+        }
+        renderSelections();
+      };
+      sheetOptionsRow.appendChild(chip);
+    });
+  }
+
   sheetBackdrop.classList.add("sheet-open");
 }
 
@@ -183,6 +229,7 @@ function closeSheet() {
 function renderSelections() {
   selectionRow.innerHTML = "";
 
+  // Стиль
   const styleInfo = STYLE_OPTIONS.find((s) => s.id === currentStyle);
   if (styleInfo) {
     const chip = document.createElement("div");
@@ -191,6 +238,7 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
+  // Эффекты
   if (activeEffects.size > 0) {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
@@ -198,6 +246,7 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
+  // Поздравление
   if (currentGreeting) {
     const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
     const chip = document.createElement("div");
@@ -206,11 +255,12 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  // Отдельный чип для VIP-гравитации
-  if (activeEffects.has("gravity-room")) {
+  // VIP-режим
+  if (currentVipMode) {
+    const v = VIP_OPTIONS.find((v) => v.id === currentVipMode);
     const chip = document.createElement("div");
-    chip.className = "selection-chip";
-    chip.textContent = "VIP: гравитация";
+    chip.className = "selection-chip selection-chip-vip";
+    chip.textContent = v ? v.label : "VIP-режим";
     selectionRow.appendChild(chip);
   }
 }
@@ -226,6 +276,7 @@ function updateGreetingOverlay() {
   greetingOverlay.style.display = "block";
 }
 
+// Уменьшение изображения до ~1024px по большей стороне
 function resizeImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -294,6 +345,9 @@ btnStyle.addEventListener("click", () => openSheetFor("style"));
 btnSkin.addEventListener("click", () => openSheetFor("skin"));
 btnMimic.addEventListener("click", () => openSheetFor("mimic"));
 btnGreetings.addEventListener("click", () => openSheetFor("greetings"));
+if (btnVip) {
+  btnVip.addEventListener("click", () => openSheetFor("vip"));
+}
 
 sheetCloseBtn.addEventListener("click", closeSheet);
 sheetBackdrop.addEventListener("click", (e) => {
@@ -304,19 +358,7 @@ btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
 
-// VIP-гравитация — просто переключатель эффекта gravity-room
-if (btnVipGravity) {
-  btnVipGravity.addEventListener("click", () => {
-    if (activeEffects.has("gravity-room")) {
-      activeEffects.delete("gravity-room");
-    } else {
-      activeEffects.add("gravity-room");
-    }
-    renderSelections();
-  });
-}
-
-// Очистка эффектов и поздравлений
+// Очистка эффектов и поздравлений (VIP остаётся)
 if (btnClearEffects) {
   btnClearEffects.addEventListener("click", () => {
     activeEffects.clear();
@@ -333,21 +375,37 @@ btnGenerate.addEventListener("click", async () => {
     return;
   }
 
+  const isVip = !!currentVipMode;
+
   try {
     btnGenerate.disabled = true;
     controls.classList.add("controls-hidden");
     generateStatus.style.display = "flex";
     downloadLink.style.display = "none";
 
-    const body = {
-      style: currentStyle,
-      text: null,
-      photo: resizedImageDataUrl,
-      effects: Array.from(activeEffects),
-      greeting: currentGreeting
-    };
+    let endpoint = "/api/generate";
+    let body;
 
-    const res = await fetch("/api/generate", {
+    if (isVip) {
+      endpoint = "/api/generate-vip1";
+      body = {
+        text: null,
+        photo: resizedImageDataUrl,
+        effects: Array.from(activeEffects),
+        greeting: currentGreeting,
+        vipMode: currentVipMode
+      };
+    } else {
+      body = {
+        style: currentStyle,
+        text: null,
+        photo: resizedImageDataUrl,
+        effects: Array.from(activeEffects),
+        greeting: currentGreeting
+      };
+    }
+
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
