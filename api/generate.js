@@ -12,10 +12,10 @@ const STYLE_PREFIX = {
     "this is the BEST IMPROVED VERSION of this person, not a different model",
     "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
     "same gender, same ethnicity, same overall personality",
-    "age stays similar (no more than about 5–10 years younger), do NOT turn them into a teenager or a completely different age",
-    "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
+    "visible but natural BEAUTY IMPROVEMENT: remove eye bags and puffiness, reduce dark circles, soften wrinkles on face and neck, even out skin tone, slightly slimmer cheeks if needed",
     "keep realistic skin texture and pores, no plastic skin, no doll face",
     "do NOT change bone structure or completely change the face",
+    "outfit can change to a nicer, well-fitting style that matches the scene",
     "natural healthy look, gentle flattering light, neutral soft background",
     "they look like themselves on their very best day in real life"
   ].join(", "),
@@ -25,45 +25,53 @@ const STYLE_PREFIX = {
     "oil painting portrait of the SAME person as in the input photo",
     "keep the same face identity and proportions, recognisably the same person",
     "same gender, same ethnicity, similar age",
+    "visible but natural beauty improvement and more even skin tone",
     "painterly brush strokes, canvas texture, rich warm colors",
-    "gentle improvement only, not a new face"
+    "outfit can change to match a classic painted portrait style"
   ].join(", "),
 
   anime: [
     "anime style portrait of the SAME person as in the input photo",
     "translate their recognisable facial features into anime style",
     "same gender and ethnicity, similar age",
-    "clean lines, soft shading, gentle colors"
+    "subtle beauty retouch and smooth skin while keeping their identity",
+    "clean lines, soft shading, gentle colors",
+    "outfit can change to a simple anime-style outfit"
   ].join(", "),
 
   poster: [
     "cinematic movie poster portrait of the SAME person as in the input photo",
     "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
     "same gender, same ethnicity, similar age",
-    "dramatic lighting, slightly stylized but still clearly the same person"
+    "visible but natural beauty improvement and more even skin tone",
+    "dramatic lighting, slightly stylized but still clearly the same person",
+    "outfit can change to a stylish movie-poster costume that fits the scene"
   ].join(", "),
 
   classic: [
     "classical old master realistic portrait of the SAME person as in the input photo",
     "keep the same face, same gender and ethnicity, similar age",
+    "gentle beauty retouch: softer wrinkles, smoother skin tone, but the same identity",
     "warm tones, detailed skin, painterly background",
-    "gentle beautification without changing who the person is"
+    "outfit can change to a timeless classic portrait outfit"
   ].join(", "),
 
   default: [
     "realistic portrait of the SAME person as in the input photo",
     "keep exact facial identity and proportions",
-    "subtle natural beauty retouch only, soft studio lighting"
+    "visible but natural beauty retouch: fewer wrinkles, smoother and more even skin tone",
+    "outfit can change to a nicer, well-fitting style that matches the scene",
+    "soft studio lighting, neutral background"
   ].join(", ")
 };
 
-// Эффекты обработки кожи + мимика + спец-сцены
+// Эффекты обработки кожи + мимика
 const EFFECT_PROMPTS = {
   // кожа
   "no-wrinkles":
-    "fewer visible wrinkles, gentle beauty retouch, keep natural skin texture",
+    "fewer visible wrinkles on face and neck, gentle beauty retouch, keep natural skin texture",
   younger:
-    "looks around 5–10 years younger but clearly the same person, fresher and more rested face",
+    "looks around 10–15 years younger but clearly the same person, fresher and more rested face, smoother skin",
   "smooth-skin":
     "smoother and more even skin tone, reduce blemishes and redness, keep pores and realism",
 
@@ -76,29 +84,19 @@ const EFFECT_PROMPTS = {
   neutral: "neutral relaxed face expression, no strong emotion",
   serious: "serious face, no smile, focused expression",
   "eyes-bigger": "slightly bigger and more open eyes, but still realistic",
-  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze",
-
-  // спец-сцена: нарушенная гравитация
-  "gravity-room": [
-    "the SAME person from the input photo in a surreal room with subtly broken gravity",
-    "hair gently flows upward, small objects around float in mid-air",
-    "coffee splashes sideways, papers slowly drifting",
-    "light comes from a glowing pool on the floor",
-    "impossible physics, soft cinematic colors",
-    "FACE IDENTITY MUST STAY THE SAME, do not change who the person is"
-  ].join(", ")
+  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
 };
 
-// Поздравления — стиль + факт русской надписи
+// Поздравления (без упоминания какой-либо страны, всё на английском)
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year greeting portrait, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
+    "festive New Year greeting portrait, glowing warm lights, snow, elegant handwritten greeting text on the image",
   birthday:
-    "birthday greeting portrait, balloons, confetti, festive composition, elegant russian handwritten birthday greeting text on the image",
+    "birthday greeting portrait, balloons, confetti, festive composition, elegant handwritten birthday greeting text on the image",
   funny:
-    "playful humorous greeting portrait, bright colors, fun composition, creative russian handwritten funny greeting text on the image",
+    "playful humorous greeting portrait, bright colors, fun composition, creative handwritten funny greeting text on the image",
   scary:
-    "dark horror themed greeting portrait, spooky lighting, eerie atmosphere, creepy russian handwritten horror greeting text on the image"
+    "dark horror themed greeting portrait, spooky lighting, eerie atmosphere, creepy handwritten horror greeting text on the image"
 };
 
 export default async function handler(req, res) {
@@ -122,10 +120,10 @@ export default async function handler(req, res) {
     // 1. Стиль
     const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
 
-    // 2. Пользовательский текст
+    // 2. Пользовательский текст (VIP-сцены и т.п.)
     const userPrompt = (text || "").trim();
 
-    // 3. Эффекты (кожа + мимика + сцены)
+    // 3. Эффекты (кожа + мимика)
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -162,9 +160,10 @@ export default async function handler(req, res) {
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
-      input
-    });
+    const output = await replicate.run(
+      "black-forest-labs/flux-kontext-pro",
+      { input }
+    );
 
     // Поиск URL
     let imageUrl = null;
