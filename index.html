@@ -32,11 +32,11 @@
       </div>
     </section>
 
-    <!-- Чипы с выбранными параметрами -->
-    <div class="selection-row" id="selectionRow"></div>
-
-    <!-- Кнопки и выбранные эффекты (будут скрываться при генерации) -->
+    <!-- Выбранные эффекты -->
     <div class="controls" id="controls">
+      <div class="selection-row" id="selectionRow"></div>
+      <button class="btn-clear" id="btnClearEffects">Сбросить эффекты</button>
+
       <section class="button-list">
         <button class="btn-main" id="btnStyle">
           <span class="btn-icon">🎨</span>
@@ -58,10 +58,10 @@
           <span>Поздравления</span>
         </button>
 
-        <!-- НОВОЕ: отдельный VIP-режим гравитации -->
-        <button class="btn-main" id="btnVipGravity">
+        <!-- НОВОЕ: VIP-портреты с 10+ сценами -->
+        <button class="btn-main" id="btnVip">
           <span class="btn-icon">💎</span>
-          <span>VIP-гравитация</span>
+          <span>VIP-портрет</span>
         </button>
 
         <button class="btn-main btn-secondary" id="btnGenerate">
@@ -79,22 +79,16 @@
             <span>Оплатить</span>
           </button>
         </div>
-
-        <!-- Кнопка сброса эффектов -->
-        <button class="btn-main btn-clear" id="btnClearEffects">
-          <span class="btn-icon">🧹</span>
-          <span>Сбросить эффекты</span>
-        </button>
       </section>
     </div>
 
-    <!-- Кнопка скачивания (маленькая, появляется после генерации) -->
+    <!-- Кнопка скачивания -->
     <div class="download-row">
       <a
         id="downloadLink"
         class="btn-download"
         href="#"
-        download="windowtosoul-portrait.jpg"
+        download="windowtosoul-portrait.png"
         style="display: none;"
       >
         Скачать портрет
@@ -110,7 +104,7 @@
   <!-- Скрытый input для загрузки фото -->
   <input type="file" id="fileInput" accept="image/*" style="display:none">
 
-  <!-- Центровая панель (sheet) для выбора эффектов -->
+  <!-- Панель (sheet) для выбора эффектов / VIP-режимов -->
   <div class="sheet-backdrop" id="sheetBackdrop">
     <div class="sheet">
       <div class="sheet-header">
@@ -119,11 +113,9 @@
       </div>
       <div class="sheet-description" id="sheetDescription"></div>
 
-      <!-- Для категорий (если потребуется) -->
       <div class="sheet-section-title" id="sheetCategoryTitle" style="display:none;">Категории</div>
       <div class="chip-row" id="sheetCategoryRow" style="display:none;"></div>
 
-      <!-- Основные варианты -->
       <div class="sheet-section-title" id="sheetOptionsTitle">Варианты</div>
       <div class="chip-row" id="sheetOptionsRow"></div>
     </div>
