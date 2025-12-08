@@ -26,7 +26,6 @@ const btnGenerate = document.getElementById("btnGenerate");
 const btnAddPhoto = document.getElementById("btnAddPhoto");
 const btnPay = document.getElementById("btnPay");
 const btnClearEffects = document.getElementById("btnClearEffects");
-const btnVip = document.getElementById("btnVip");
 
 const downloadLink = document.getElementById("downloadLink");
 const fileInput = document.getElementById("fileInput");
@@ -44,13 +43,13 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 // --- КОНФИГ ВАРИАНТОВ ---
 
 const STYLE_OPTIONS = [
-  { id: "beauty",  label: "Красивый портрет",      description: "Светлый, гладкая кожа, без морщин" },
-  { id: "oil",     label: "Картина маслом",        description: "Художественный стиль с мазками" },
-  { id: "anime",   label: "Аниме",                 description: "Стиль аниме-персонажа" },
-  { id: "poster",  label: "Кино-постер",           description: "Контрастный, как в фильме" },
-  { id: "classic", label: "Классический",          description: "Старые мастера" },
-  // Режим реставрации
-  { id: "restore", label: "Реставрация фото",      description: "Восстановление и лёгкая раскраска старых фото" }
+  { id: "beauty",  label: "Красивый портрет", description: "Мягкая ретушь этого же человека" },
+  { id: "order",   label: "Орден Тишины",     description: "Эпический фэнтези-мастер в зале колонн" },
+  { id: "demon",   label: "Огненный ритуал",  description: "Свеча, искры и сияющие глаза" },
+  { id: "oil",     label: "Картина маслом",   description: "Художественный стиль с мазками" },
+  { id: "anime",   label: "Аниме",            description: "Стиль аниме-персонажа" },
+  { id: "poster",  label: "Кино-постер",      description: "Контрастный, как в фильме" },
+  { id: "classic", label: "Классический",     description: "Старые мастера" }
 ];
 
 const SKIN_EFFECTS = [
@@ -193,14 +192,14 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  if (activeEffects.size > 0 && currentStyle !== "restore") {
+  if (activeEffects.size > 0) {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
     chip.textContent = `Эффекты: ${activeEffects.size}`;
     selectionRow.appendChild(chip);
   }
 
-  if (currentGreeting && currentStyle !== "restore") {
+  if (currentGreeting) {
     const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
     const chip = document.createElement("div");
     chip.className = "selection-chip";
@@ -210,7 +209,7 @@ function renderSelections() {
 }
 
 function updateGreetingOverlay() {
-  if (!currentGreeting || currentStyle === "restore") {
+  if (!currentGreeting) {
     greetingOverlay.textContent = "";
     greetingOverlay.style.display = "none";
     return;
@@ -298,7 +297,7 @@ btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
 
-// ОЧИСТКА эффектов и поздравлений (если кнопка есть в верстке)
+// Очистка эффектов и поздравлений
 if (btnClearEffects) {
   btnClearEffects.addEventListener("click", () => {
     activeEffects.clear();
@@ -308,20 +307,11 @@ if (btnClearEffects) {
   });
 }
 
-// Обычная генерация / реставрация
+// Генерация
 btnGenerate.addEventListener("click", async () => {
-  const isRestoreMode = currentStyle === "restore";
-
-  if (isRestoreMode) {
-    if (!resizedImageDataUrl) {
-      alert("Для реставрации нужно сначала добавить фото.");
-      return;
-    }
-  } else {
-    if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
-      alert("Добавьте фото, выберите эффект или поздравление.");
-      return;
-    }
+  if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
+    alert("Добавьте фото, выберите эффект или поздравление.");
+    return;
   }
 
   try {
@@ -330,30 +320,19 @@ btnGenerate.addEventListener("click", async () => {
     generateStatus.style.display = "flex";
     downloadLink.style.display = "none";
 
-    let res;
-    if (isRestoreMode) {
-      const body = { photo: resizedImageDataUrl };
+    const body = {
+      style: currentStyle,
+      text: null,
+      photo: resizedImageDataUrl,
+      effects: Array.from(activeEffects),
+      greeting: currentGreeting
+    };
 
-      res = await fetch("/api/restore", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-    } else {
-      const body = {
-        style: currentStyle,
-        text: null,
-        photo: resizedImageDataUrl,
-        effects: Array.from(activeEffects),
-        greeting: currentGreeting
-      };
-
-      res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-    }
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
 
     let data;
     try {
@@ -385,65 +364,6 @@ btnGenerate.addEventListener("click", async () => {
     generateStatus.style.display = "none";
   }
 });
-
-// VIP-ГЕНЕРАЦИЯ (отдельная кнопка, отдельный endpoint)
-if (btnVip) {
-  btnVip.addEventListener("click", async () => {
-    if (!resizedImageDataUrl) {
-      alert("Для VIP-стиля сначала добавьте фото.");
-      return;
-    }
-
-    try {
-      btnVip.disabled = true;
-      controls.classList.add("controls-hidden");
-      generateStatus.style.display = "flex";
-      downloadLink.style.display = "none";
-
-      const body = {
-        text: null,
-        photo: resizedImageDataUrl,
-        effects: Array.from(activeEffects),
-        greeting: currentGreeting
-      };
-
-      const res = await fetch("/api/generate-vip1", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        throw new Error("Сервер вернул некорректный ответ.");
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || data.message || String(res.status));
-      }
-
-      if (!data.image) {
-        throw new Error("Нет изображения от сервера.");
-      }
-
-      previewImage.src = data.image;
-      previewImage.style.display = "block";
-      previewPlaceholder.style.display = "none";
-
-      downloadLink.href = data.image;
-      downloadLink.style.display = "inline-flex";
-    } catch (err) {
-      console.error("VIP GEN ERROR", err);
-      alert("Ошибка VIP-генерации: " + (err.message || err));
-    } finally {
-      btnVip.disabled = false;
-      controls.classList.remove("controls-hidden");
-      generateStatus.style.display = "none";
-    }
-  });
-}
 
 // Инициализация
 renderSelections();
