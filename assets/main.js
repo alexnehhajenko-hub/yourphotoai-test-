@@ -1,16 +1,15 @@
 // assets/main.js
 // Логика интерфейса для WindowToSoul тестового сайта
+// Обычные стили + эффекты + поздравления + 10 VIP-сцен (через text-prompt)
 
 // --- СТЕЙТ ---
 
-let currentStyle = "beauty";            // обычный стиль портрета
-const activeEffects = new Set();        // эффекты кожи + мимика
-let currentGreeting = null;             // поздравление
-let originalImageFile = null;           // исходный файл фото
-let resizedImageDataUrl = null;         // уменьшенное фото base64
-
-// VIP-режим: null = выключен, иначе id одного из режимов
-let currentVipMode = null;
+let currentStyle = "beauty";              // стиль портрета
+const activeEffects = new Set();          // эффекты кожи + мимики
+let currentGreeting = null;               // поздравление
+let originalImageFile = null;             // исходный файл фото
+let resizedImageDataUrl = null;           // уменьшенное фото base64
+let currentVipPreset = null;              // id выбранного VIP-режима (или null)
 
 // --- DOM-ЭЛЕМЕНТЫ ---
 
@@ -25,11 +24,11 @@ const btnStyle = document.getElementById("btnStyle");
 const btnSkin = document.getElementById("btnSkin");
 const btnMimic = document.getElementById("btnMimic");
 const btnGreetings = document.getElementById("btnGreetings");
-const btnVip = document.getElementById("btnVip");
 const btnGenerate = document.getElementById("btnGenerate");
 const btnAddPhoto = document.getElementById("btnAddPhoto");
 const btnPay = document.getElementById("btnPay");
 const btnClearEffects = document.getElementById("btnClearEffects");
+const btnVip = document.getElementById("btnVip"); // новая кнопка VIP-режимов
 
 const downloadLink = document.getElementById("downloadLink");
 const fileInput = document.getElementById("fileInput");
@@ -47,11 +46,11 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 // --- КОНФИГ ВАРИАНТОВ ---
 
 const STYLE_OPTIONS = [
-  { id: "beauty",  label: "Красивый портрет",  description: "Светлый, гладкая кожа, без морщин" },
-  { id: "oil",     label: "Картина маслом",    description: "Художественный стиль с мазками" },
-  { id: "anime",   label: "Аниме",             description: "Стиль аниме-персонажа" },
-  { id: "poster",  label: "Кино-постер",       description: "Контрастный, как в фильме" },
-  { id: "classic", label: "Классический",      description: "Старые мастера" }
+  { id: "beauty",  label: "Красивый портрет",   description: "Светлый, гладкая кожа, без морщин" },
+  { id: "oil",     label: "Картина маслом",     description: "Художественный стиль с мазками" },
+  { id: "anime",   label: "Аниме",              description: "Стиль аниме-персонажа" },
+  { id: "poster",  label: "Кино-постер",        description: "Контрастный, как в фильме" },
+  { id: "classic", label: "Классический стиль", description: "Старые мастера" }
 ];
 
 const SKIN_EFFECTS = [
@@ -78,19 +77,172 @@ const GREETING_OPTIONS = [
   { id: "scary",    label: "Страшное",       description: "Жуткий стиль" }
 ];
 
-// VIP-режимы (id должны совпадать с VIP_SCENES в api/generate-vip1.js)
-const VIP_OPTIONS = [
-  { id: "gravity",      label: "VIP: Гравитация",        description: "Комната с нарушенной гравитацией" },
-  { id: "knight",       label: "VIP: Орден тишины",      description: "Фэнтези-рыцарь, орден тишины" },
-  { id: "cinema",       label: "VIP: Кино-кадр",         description: "Кадр из дорогого фильма" },
-  { id: "time_gradient",label: "VIP: Время",             description: "От молодого к взрослому в одном лице" },
-  { id: "crime_board",  label: "VIP: Доска улик",        description: "Детективная доска с фотографиями" },
-  { id: "notifications",label: "VIP: Уведомления",       description: "Комната из уведомлений и чатов" },
-  { id: "multiverse",   label: "VIP: Мультивселенная",   description: "3–4 версии жизни рядом" },
-  { id: "future_phone", label: "VIP: Телефон 2525",      description: "Портрет из будущего со светящимися иконками" },
-  { id: "art_timeline", label: "VIP: Стена искусств",    description: "Стена из разных эпох искусства" },
-  { id: "starry_hair",  label: "VIP: Звёздные волосы",   description: "Волосы переходят в звёздное небо" },
-  { id: "angel_devil",  label: "VIP: Ангел и демон",     description: "По центру человек, слева ангел, справа демон" }
+// 10 VIP-сцен. Все они идут через поле text, backend /api/generate не меняем.
+const VIP_PRESETS = [
+  {
+    id: "vip-gravity",
+    chipLabel: "gravity",
+    label: "VIP: Broken gravity",
+    description: "Комната, где гравитация сломана: волосы и предметы чуть парят.",
+    basePrompt: `
+highly realistic portrait of the person from the reference photo,
+the SAME face and identity, same gender, same ethnicity, similar age,
+visible but natural beauty improvement: smoother skin tone, fewer wrinkles, less puffiness,
+set in a room where gravity is subtly broken,
+hair gently flows slightly upward, small objects and dust float in mid-air,
+coffee splashes sideways frozen in motion,
+main light source is a glowing pool of light on the table or floor,
+soft cinematic colors, still realistic photo,
+clothing is newly generated and updated to fit the scene, neat and well-fitting
+`.trim()
+  },
+  {
+    id: "vip-movie-still",
+    chipLabel: "movie frame",
+    label: "VIP: Movie frame",
+    description: "Кадр из дорогого фильма с твоим лицом.",
+    basePrompt: `
+ultra cinematic portrait of the person from the reference photo,
+the SAME identity and facial features, same gender and same ethnicity, similar age,
+captured as a still frame from a high-budget movie,
+dramatic soft lighting, volumetric light, subtle film grain,
+background with symbolic elements of their life: soft city hints, abstract shapes, blurred story details,
+35mm lens look, shallow depth of field, anamorphic bokeh, extremely detailed, award-winning movie still,
+clothing is newly generated as a stylish movie outfit that matches the scene
+`.trim()
+  },
+  {
+    id: "vip-time-gradient",
+    chipLabel: "time",
+    label: "VIP: Time gradient",
+    description: "Лицо, плавно переходящее от молодости к зрелости.",
+    basePrompt: `
+surreal realistic portrait of the person from the reference photo,
+same identity and proportions, same gender and ethnicity, clearly the same person,
+their face smoothly transitioning from a younger version on the left side
+to an older version on the right side,
+no hard split line, continuous time gradient,
+delicate aging details, subtle wrinkles and hair changes,
+background with soft blurred clocks and city lights,
+high-end editorial photography, ultra detailed skin and eyes,
+clothing is neutral and newly generated so it works for all ages in the frame
+`.trim()
+  },
+  {
+    id: "vip-evidence-board",
+    chipLabel: "evidence board",
+    label: "VIP: Evidence board",
+    description: "Как в криминальном фильме: твоё фото в центре, вокруг фрагменты снов.",
+    basePrompt: `
+crime scene evidence board style composition,
+central Polaroid-style photo of the person from the reference photo
+pinned to a corkboard, clearly recognisable same face and identity,
+surrounded by surreal dream fragments as smaller photos:
+floating staircase, misty corridor, symbolic objects,
+red strings connecting the central portrait to the fragments,
+moody overhead light, cinematic shadows, hyperrealistic textures,
+detective investigation aesthetic,
+clothing in the central portrait is newly generated but realistic and simple
+`.trim()
+  },
+  {
+    id: "vip-notification-room",
+    chipLabel: "notifications",
+    label: "VIP: Notification room",
+    description: "Комната, полностью собранная из уведомлений и сообщений.",
+    basePrompt: `
+surreal interior portrait of the person from the reference photo sitting or standing in a room,
+same facial identity and proportions, same gender and ethnicity, similar age,
+all walls, ceiling and floor are made of frozen phone notifications and chat bubbles,
+emails, app icons, message previews forming a 3D mosaic surface,
+one real physical window with natural daylight and no notifications,
+high realism, detailed typography, subtle glow from screens, modern cinematic look,
+their clothes are newly generated modern casual outfit, slightly lit by the screen glow
+`.trim()
+  },
+  {
+    id: "vip-multi-life",
+    chipLabel: "4 lives",
+    label: "VIP: Four lives",
+    description: "4 версии одного человека: художник, учёный, киберпанк и спокойный возрастной.",
+    basePrompt: `
+group portrait in a single frame,
+the person from the reference photo appears as 3-4 alternate life versions standing together:
+one as an artist with paint on hands,
+one as a scientist in a lab coat,
+one as a cyberpunk version with subtle neon implants,
+one as a calm older self,
+all faces clearly related and derived from the same base identity and ethnicity,
+same core facial features, same bone structure, different outfits and details,
+soft studio lighting, cinematic composition, ultra detailed, story-rich photo,
+all clothing is newly generated to match each role
+`.trim()
+  },
+  {
+    id: "vip-future-phone",
+    chipLabel: "phone 2525",
+    label: "VIP: Phone 2525",
+    description: "Будущее селфи 2525 года с голограммами эмоций.",
+    basePrompt: `
+hyper realistic portrait of the person from the reference photo
+taken by a futuristic smartphone camera from the year 2525,
+same identity, same ethnicity and facial structure, clearly the same person,
+semi-transparent holographic overlays around the head showing emotions and thoughts
+as floating icons and abstract symbols,
+minimal futuristic UI elements, clean AR interface, volumetric light,
+high resolution, glossy, cutting-edge sci-fi photography style,
+clothing is newly generated simple futuristic casual outfit that fits the scene
+`.trim()
+  },
+  {
+    id: "vip-art-timeline",
+    chipLabel: "art history",
+    label: "VIP: Art history wall",
+    description: "Ты стоишь перед стеной из фрагментов разных эпох искусства.",
+    basePrompt: `
+composite portrait of the person from the reference photo standing in front of a wall
+made of vertical panels from different eras:
+ancient stone carvings, renaissance painting fragments, old film frames, digital glitch screens,
+their body and face remain realistic and consistent, same identity, same gender and ethnicity,
+soft museum-like light on their face,
+the background subtly changes style from left to right like a timeline of human art,
+ultra detailed, poetic, slightly surreal, high-end art photography,
+their clothing is newly generated, neutral and timeless so it works with all eras behind them
+`.trim()
+  },
+  {
+    id: "vip-star-hair",
+    chipLabel: "star hair",
+    label: "VIP: Star hair",
+    description: "Часть волос и плеч растворяется в ночном небе.",
+    basePrompt: `
+dreamlike portrait of the person from the reference photo,
+same recognisable face and identity, same gender and ethnicity,
+parts of their hair and shoulders dissolve into a starry night sky,
+tiny constellations gently shaping the outline of their head and thoughts,
+soft glow around the eyes, subtle cosmic dust,
+not too abstract, still clearly their face,
+long exposure photography feel, ultra detailed, magical but elegant, premium art print style,
+clothing is newly generated, dark and simple so it blends into the night sky transition
+`.trim()
+  },
+  {
+    id: "vip-angel-demon",
+    chipLabel: "angel & demon",
+    label: "VIP: Angel and demon",
+    description: "По центру обычный человек, слева ангел, справа демон — все с твоим лицом.",
+    basePrompt: `
+epic triptych-style composition in a single frame,
+in the center: realistic portrait of the person from the reference photo, neutral expression,
+on the left side: angelic version of the SAME person with soft light, subtle wings and halo,
+on the right side: darker demonic version of the SAME person with horns or shadow crown and softly glowing eyes,
+all three faces must clearly share the SAME identity, same ethnicity, same bone structure and main facial features,
+do NOT replace the face with a different actor or model,
+background gently fades from warm light on the angel side to dark tones on the demon side,
+cinematic lighting, ultra detailed skin and eyes, dramatic but elegant,
+clothing for all three versions is newly generated and matches their role but stays realistic and not cartoonish
+`.trim()
+  }
 ];
 
 // --- УТИЛИТЫ ---
@@ -192,22 +344,20 @@ function openSheetFor(type) {
   }
 
   if (type === "vip") {
-    sheetTitle.textContent = "VIP-портреты";
-    sheetDescription.textContent =
-      "Специальные сцены (кино, рыцарь, мультивселенная и т.п.). Лицо остаётся тем же человеком.";
-    VIP_OPTIONS.forEach((opt) => {
+    sheetTitle.textContent = "VIP-режимы";
+    sheetDescription.textContent = "Сцены с историей. Лицо — то же, меняется мир вокруг.";
+    VIP_PRESETS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
       chip.textContent = opt.label;
       chip.title = opt.description;
-      if (currentVipMode === opt.id) chip.classList.add("chip-active");
+      if (currentVipPreset === opt.id) chip.classList.add("chip-active");
       chip.onclick = () => {
-        // повторное нажатие — выключаем VIP
-        if (currentVipMode === opt.id) {
-          currentVipMode = null;
+        if (currentVipPreset === opt.id) {
+          currentVipPreset = null; // повторный клик — выключить VIP
           chip.classList.remove("chip-active");
         } else {
-          currentVipMode = opt.id;
+          currentVipPreset = opt.id;
           sheetOptionsRow
             .querySelectorAll(".chip")
             .forEach((c) => c.classList.remove("chip-active"));
@@ -226,10 +376,10 @@ function closeSheet() {
   sheetBackdrop.classList.remove("sheet-open");
 }
 
+// Показываем выбранные параметры над кнопками
 function renderSelections() {
   selectionRow.innerHTML = "";
 
-  // Стиль
   const styleInfo = STYLE_OPTIONS.find((s) => s.id === currentStyle);
   if (styleInfo) {
     const chip = document.createElement("div");
@@ -238,7 +388,6 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  // Эффекты
   if (activeEffects.size > 0) {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
@@ -246,7 +395,6 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  // Поздравление
   if (currentGreeting) {
     const g = GREETING_OPTIONS.find((g) => g.id === currentGreeting);
     const chip = document.createElement("div");
@@ -255,16 +403,17 @@ function renderSelections() {
     selectionRow.appendChild(chip);
   }
 
-  // VIP-режим
-  if (currentVipMode) {
-    const v = VIP_OPTIONS.find((v) => v.id === currentVipMode);
+  if (currentVipPreset) {
+    const v = VIP_PRESETS.find((v) => v.id === currentVipPreset);
     const chip = document.createElement("div");
-    chip.className = "selection-chip selection-chip-vip";
-    chip.textContent = v ? v.label : "VIP-режим";
+    chip.className = "selection-chip";
+    const name = v ? v.chipLabel || v.label : "VIP-scene";
+    chip.textContent = `VIP: ${name}`;
     selectionRow.appendChild(chip);
   }
 }
 
+// Обновляем текстовую плашку поверх превью, если выбрано поздравление
 function updateGreetingOverlay() {
   if (!currentGreeting) {
     greetingOverlay.textContent = "";
@@ -276,7 +425,7 @@ function updateGreetingOverlay() {
   greetingOverlay.style.display = "block";
 }
 
-// Уменьшение изображения до ~1024px по большей стороне
+// Уменьшаем изображение до ~1024px по большей стороне
 function resizeImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -321,6 +470,7 @@ function resizeImage(file) {
 
 // --- ОБРАБОТЧИКИ ---
 
+// Добавить фото
 btnAddPhoto.addEventListener("click", () => {
   fileInput.click();
 });
@@ -341,10 +491,12 @@ fileInput.addEventListener("change", async (e) => {
   }
 });
 
+// Кнопки выбора категорий
 btnStyle.addEventListener("click", () => openSheetFor("style"));
 btnSkin.addEventListener("click", () => openSheetFor("skin"));
 btnMimic.addEventListener("click", () => openSheetFor("mimic"));
 btnGreetings.addEventListener("click", () => openSheetFor("greetings"));
+
 if (btnVip) {
   btnVip.addEventListener("click", () => openSheetFor("vip"));
 }
@@ -354,15 +506,17 @@ sheetBackdrop.addEventListener("click", (e) => {
   if (e.target === sheetBackdrop) closeSheet();
 });
 
+// Оплата отключена в тесте
 btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
 
-// Очистка эффектов и поздравлений (VIP остаётся)
+// Очистка эффектов + поздравления + VIP
 if (btnClearEffects) {
   btnClearEffects.addEventListener("click", () => {
     activeEffects.clear();
     currentGreeting = null;
+    currentVipPreset = null;
     renderSelections();
     updateGreetingOverlay();
   });
@@ -370,12 +524,15 @@ if (btnClearEffects) {
 
 // Генерация
 btnGenerate.addEventListener("click", async () => {
-  if (!resizedImageDataUrl && activeEffects.size === 0 && !currentGreeting) {
-    alert("Добавьте фото, выберите эффект или поздравление.");
+  if (
+    !resizedImageDataUrl &&
+    activeEffects.size === 0 &&
+    !currentGreeting &&
+    !currentVipPreset
+  ) {
+    alert("Добавьте фото, выберите эффект, поздравление или VIP-сцену.");
     return;
   }
-
-  const isVip = !!currentVipMode;
 
   try {
     btnGenerate.disabled = true;
@@ -383,29 +540,23 @@ btnGenerate.addEventListener("click", async () => {
     generateStatus.style.display = "flex";
     downloadLink.style.display = "none";
 
-    let endpoint = "/api/generate";
-    let body;
-
-    if (isVip) {
-      endpoint = "/api/generate-vip1";
-      body = {
-        text: null,
-        photo: resizedImageDataUrl,
-        effects: Array.from(activeEffects),
-        greeting: currentGreeting,
-        vipMode: currentVipMode
-      };
-    } else {
-      body = {
-        style: currentStyle,
-        text: null,
-        photo: resizedImageDataUrl,
-        effects: Array.from(activeEffects),
-        greeting: currentGreeting
-      };
+    let textPrompt = null;
+    if (currentVipPreset) {
+      const v = VIP_PRESETS.find((v) => v.id === currentVipPreset);
+      if (v && v.basePrompt) {
+        textPrompt = v.basePrompt;
+      }
     }
 
-    const res = await fetch(endpoint, {
+    const body = {
+      style: currentStyle,
+      text: textPrompt,
+      photo: resizedImageDataUrl,
+      effects: Array.from(activeEffects),
+      greeting: currentGreeting
+    };
+
+    const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -445,5 +596,5 @@ btnGenerate.addEventListener("click", async () => {
 // Инициализация
 renderSelections();
 updateGreetingOverlay();
-previewImage.style.display = "none";
-generateStatus.style.display = "none";
+if (previewImage) previewImage.style.display = "none";
+if (generateStatus) generateStatus.style.display = "none";
