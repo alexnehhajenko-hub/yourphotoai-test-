@@ -5,9 +5,10 @@
 import Replicate from "replicate";
 
 // СТИЛИ
-// beauty  — мягкая ретушь того же человека
-// demon   — огненный ритуал со свечой
-// order   — эпический фэнтези-портрет "Орден Тишины"
+// beauty   — мягкая ретушь того же человека
+// demon    — огненный ритуал со свечой
+// order    — эпический фэнтези-портрет "Орден Тишины"
+// gravity  — реалистичный портрет в комнате с нарушенной гравитацией
 // остальные — художественные стили
 const STYLE_PREFIX = {
   // 1. КРАСИВЫЙ ПОРТРЕТ (строгий режим, только ретушь)
@@ -50,7 +51,22 @@ const STYLE_PREFIX = {
     "gentle beauty enhancement only, do NOT replace the person with a generic model"
   ].join(", "),
 
-  // 4. Картина маслом
+  // 4. НАРУШЕННАЯ ГРАВИТАЦИЯ (комната)
+  gravity: [
+    "realistic portrait of the SAME person as in the input photo",
+    "preserve identity strictly: same face shape, same skull and head proportions, same nose, lips, jawline, eye distance and overall geometry",
+    "same gender and ethnicity, similar age, clearly the same person",
+    "in a room where gravity is subtly broken",
+    "their hair gently flows upward or sideways as if floating",
+    "small objects around them float mid-air",
+    "coffee splashes sideways from a cup, papers slowly drifting around",
+    "light coming from the floor as a softly glowing pool of light",
+    "calm confident expression",
+    "ultra realistic impossible physics photo, 8k look, soft cinematic colors",
+    "gentle beauty enhancement only, do NOT turn them into a different model"
+  ].join(", "),
+
+  // 5. Картина маслом
   oil: [
     "oil painting portrait of the SAME person as in the input photo",
     "keep the same identity and proportions, clearly the same person",
@@ -59,7 +75,7 @@ const STYLE_PREFIX = {
     "gentle improvement only, not a new face"
   ].join(", "),
 
-  // 5. Аниме
+  // 6. Аниме
   anime: [
     "anime style portrait of the SAME person as in the input photo",
     "translate their recognisable facial features into anime style",
@@ -67,7 +83,7 @@ const STYLE_PREFIX = {
     "clean lines, soft shading, gentle colors"
   ].join(", "),
 
-  // 6. Кино-постер
+  // 7. Кино-постер
   poster: [
     "cinematic movie poster portrait of the SAME person as in the input photo",
     "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
@@ -75,7 +91,7 @@ const STYLE_PREFIX = {
     "dramatic lighting, slightly stylized but still clearly the same person"
   ].join(", "),
 
-  // 7. Классика
+  // 8. Классика
   classic: [
     "classical old master realistic portrait of the SAME person as in the input photo",
     "keep the same face, same gender and ethnicity, similar age",
@@ -91,7 +107,7 @@ const STYLE_PREFIX = {
   ].join(", ")
 };
 
-// Эффекты обработки кожи + мимика
+// ЭФФЕКТЫ
 const EFFECT_PROMPTS = {
   // кожа
   "no-wrinkles":
