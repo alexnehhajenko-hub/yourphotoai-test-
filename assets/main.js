@@ -4,7 +4,7 @@
 // --- СТЕЙТ ---
 
 let currentStyle = "beauty";            // стиль портрета
-const activeEffects = new Set();        // эффекты кожи + мимики
+const activeEffects = new Set();        // эффекты кожи + мимики + сцены
 let currentGreeting = null;             // поздравление
 let originalImageFile = null;           // исходный файл фото
 let resizedImageDataUrl = null;         // уменьшенное фото base64
@@ -22,6 +22,7 @@ const btnStyle = document.getElementById("btnStyle");
 const btnSkin = document.getElementById("btnSkin");
 const btnMimic = document.getElementById("btnMimic");
 const btnGreetings = document.getElementById("btnGreetings");
+const btnVipGravity = document.getElementById("btnVipGravity");
 const btnGenerate = document.getElementById("btnGenerate");
 const btnAddPhoto = document.getElementById("btnAddPhoto");
 const btnPay = document.getElementById("btnPay");
@@ -64,14 +65,7 @@ const MIMIC_EFFECTS = [
   { id: "neutral",         label: "Нейтральное лицо",     description: "Спокойное" },
   { id: "serious",         label: "Серьёзное лицо",       description: "Без улыбки" },
   { id: "eyes-bigger",     label: "Глаза больше",         description: "Чуть крупнее" },
-  { id: "eyes-brighter",   label: "Глаза ярче",           description: "Выразительный взгляд" },
-
-  // НОВОЕ: спец-сцена с нарушенной гравитацией
-  {
-    id: "gravity-room",
-    label: "Сцена: нарушена гравитация",
-    description: "Парящие предметы, кофе в воздухе, свет снизу"
-  }
+  { id: "eyes-brighter",   label: "Глаза ярче",           description: "Выразительный взгляд" }
 ];
 
 const GREETING_OPTIONS = [
@@ -130,8 +124,8 @@ function openSheetFor(type) {
   }
 
   if (type === "mimic") {
-    sheetTitle.textContent = "Мимика и сцены";
-    sheetDescription.textContent = "Настройте выражение лица и особые сцены.";
+    sheetTitle.textContent = "Мимика";
+    sheetDescription.textContent = "Настройте настроение выражения лица.";
     MIMIC_EFFECTS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
@@ -209,6 +203,14 @@ function renderSelections() {
     const chip = document.createElement("div");
     chip.className = "selection-chip";
     chip.textContent = g ? `Поздравление: ${g.label}` : "Поздравление выбрано";
+    selectionRow.appendChild(chip);
+  }
+
+  // Отдельный чип для VIP-гравитации
+  if (activeEffects.has("gravity-room")) {
+    const chip = document.createElement("div");
+    chip.className = "selection-chip";
+    chip.textContent = "VIP: гравитация";
     selectionRow.appendChild(chip);
   }
 }
@@ -301,6 +303,18 @@ sheetBackdrop.addEventListener("click", (e) => {
 btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
+
+// VIP-гравитация — просто переключатель эффекта gravity-room
+if (btnVipGravity) {
+  btnVipGravity.addEventListener("click", () => {
+    if (activeEffects.has("gravity-room")) {
+      activeEffects.delete("gravity-room");
+    } else {
+      activeEffects.add("gravity-room");
+    }
+    renderSelections();
+  });
+}
 
 // Очистка эффектов и поздравлений
 if (btnClearEffects) {
