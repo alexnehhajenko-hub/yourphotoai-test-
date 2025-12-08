@@ -1,42 +1,73 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
 // Фото / текст / эффекты кожи / мимика / поздравления
-// Максимальный упор на ТОГО ЖЕ человека, только аккуратная ретушь
+// Без возврата prompt на фронт
 
 import Replicate from "replicate";
 
-// Стили — подчёркиваем, что это ЛУЧШАЯ ВЕРСИЯ ЭТОГО ЖЕ ЧЕЛОВЕКА
+// СТИЛИ
+// beauty  — мягкая ретушь того же человека
+// demon   — огненный ритуал со свечой
+// order   — эпический фэнтези-портрет "Орден Тишины"
+// остальные — художественные стили
 const STYLE_PREFIX = {
-  // Главный стиль: улучшенная версия того же человека
+  // 1. КРАСИВЫЙ ПОРТРЕТ (строгий режим, только ретушь)
   beauty: [
-    "hyper realistic studio portrait of the SAME person as in the input photo",
-    "this must be a professional retouched photo of the SAME person, NOT a different model",
-    "keep exact facial identity: same face shape, same nose, same eyes, same lips, same jawline, same head proportions",
-    "same gender, same ethnicity, same haircut length and overall appearance",
-    "age is almost the same, at most about 5 years younger, do NOT make them much younger or older",
-    "NO drastic changes: do not change bone structure, do not change eye shape or nose shape, do not change face type",
-    "only subtle BEAUTY RETOUCH: reduce eye bags and puffiness, soften dark circles, smooth small wrinkles, even out skin tone",
+    "ultra realistic studio portrait RETOUCH of the SAME person as in the input photo",
+    "this must look like the SAME photo professionally retouched in Photoshop, not a new person",
+    "preserve identity: same face shape, same skull and head proportions, same nose, same lips, same jawline, same distance between facial features",
+    "same gender, same ethnicity, same haircut and hair length (if bald, stay bald, do NOT add hair)",
+    "age stays almost the same, at most about 5 years younger, never a teenager or a different age group",
+    "subtle beauty improvement only: reduce eye bags and puffiness, soften dark circles, smooth small wrinkles on face and neck, slightly more even skin tone",
     "keep realistic skin texture and pores, no plastic doll skin",
-    "natural healthy look, soft flattering light, simple neutral background",
-    "family and friends must clearly recognise this as the same person on their best real-life day"
+    "no change of bone structure, no change of fundamental face geometry",
+    "neutral soft background, soft flattering light, natural color balance",
+    "overall result: they look like themselves on their very best real day, not a different model"
   ].join(", "),
 
-  // Художественная картина маслом
+  // 2. ДЕМОН / РИТУАЛ СО СВЕЧОЙ
+  demon: [
+    "dramatic cinematic portrait of the SAME person as in the input photo",
+    "preserve identity strictly: same gender, same ethnicity, same face structure, same head shape and proportions",
+    "do NOT change the person, only the scene, lighting and expression",
+    "dark ritual room, warm candlelight in front of them, bowl or cup with fire",
+    "subtle blue or orange glowing embers and particles in the air",
+    "slightly glowing eyes with soft colored light (not fully white, still human and recognizable)",
+    "moody low key lighting, strong contrast between face and dark background",
+    "gentle beauty retouch only, keep realistic skin and real-world proportions"
+  ].join(", "),
+
+  // 3. ЭПИЧЕСКИЙ ФЭНТЕЗИ-ПОРТРЕТ "ОРДЕН ТИШИНЫ"
+  order: [
+    "epic fantasy portrait of the SAME person as in the input photo",
+    "they are the grandmaster of a secret order called 'Order of Silence'",
+    "preserve identity: same face structure, same skull and head proportions, same nose, same lips, same jawline, same distance between facial features",
+    "same gender and ethnicity as in the input, similar age, clearly the same person in a different outfit",
+    "wearing elegant dark robes with subtle silver embroidery",
+    "order's symbol integrated into jewelry and fabric, softly glowing sigils",
+    "background: vast dim hall with tall columns, banners and floating symbols of silence in the air",
+    "soft directional cinematic light on the face, hyper detailed fabrics and face",
+    "concept art for AAA RPG, high resolution, dramatic but still realistic",
+    "gentle beauty enhancement only, do NOT replace the person with a generic model"
+  ].join(", "),
+
+  // 4. Картина маслом
   oil: [
     "oil painting portrait of the SAME person as in the input photo",
-    "recognisably the same face and identity, same head proportions",
+    "keep the same identity and proportions, clearly the same person",
     "same gender, same ethnicity, similar age",
     "painterly brush strokes, canvas texture, rich warm colors",
-    "gentle improvement only without changing who they are"
+    "gentle improvement only, not a new face"
   ].join(", "),
 
+  // 5. Аниме
   anime: [
     "anime style portrait of the SAME person as in the input photo",
     "translate their recognisable facial features into anime style",
     "same gender and ethnicity, similar age",
-    "clean lines, soft shading, gentle colors",
-    "must still clearly look like the same person"
+    "clean lines, soft shading, gentle colors"
   ].join(", "),
 
+  // 6. Кино-постер
   poster: [
     "cinematic movie poster portrait of the SAME person as in the input photo",
     "keep the same identity: face shape, eyes, nose, mouth and jaw must match",
@@ -44,17 +75,19 @@ const STYLE_PREFIX = {
     "dramatic lighting, slightly stylized but still clearly the same person"
   ].join(", "),
 
+  // 7. Классика
   classic: [
     "classical old master realistic portrait of the SAME person as in the input photo",
-    "keep the same face and identity, same gender and ethnicity, similar age",
+    "keep the same face, same gender and ethnicity, similar age",
     "warm tones, detailed skin, painterly background",
-    "gentle beautification without changing their facial structure"
+    "gentle beautification without changing who the person is"
   ].join(", "),
 
+  // Режим по умолчанию
   default: [
     "realistic portrait of the SAME person as in the input photo",
-    "keep exact facial identity and proportions, no new person",
-    "only subtle natural beauty retouch, soft studio lighting"
+    "preserve identity and proportions",
+    "subtle natural beauty retouch only, soft studio lighting"
   ].join(", ")
 };
 
@@ -62,9 +95,9 @@ const STYLE_PREFIX = {
 const EFFECT_PROMPTS = {
   // кожа
   "no-wrinkles":
-    "slightly fewer visible wrinkles, very gentle beauty retouch, keep natural skin texture and pores",
+    "fewer visible wrinkles, gentle beauty retouch, keep natural skin texture",
   younger:
-    "looks at most about 5 years younger but obviously the same person, fresher and more rested face",
+    "looks around 5–10 years younger but clearly the same person, fresher and more rested face",
   "smooth-skin":
     "smoother and more even skin tone, reduce blemishes and redness, keep pores and realism",
 
@@ -72,12 +105,12 @@ const EFFECT_PROMPTS = {
   "smile-soft": "subtle soft smile, calm and relaxed expression",
   "smile-big": "big warm smile, expressive and friendly face",
   "smile-hollywood":
-    "wide smile with visible teeth, hollywood style, still natural and realistic",
+    "wide smile with visible teeth, hollywood style, still natural",
   laugh: "laughing with a bright smile, joyful and natural expression",
   neutral: "neutral relaxed face expression, no strong emotion",
   serious: "serious face, no smile, focused expression",
-  "eyes-bigger": "slightly more open eyes, but still realistic and not anime-like",
-  "eyes-brighter": "brighter eyes, clearer irises, more vivid but realistic gaze"
+  "eyes-bigger": "slightly bigger and more open eyes, but still realistic",
+  "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
 };
 
 // Поздравления — стиль + факт русской надписи
