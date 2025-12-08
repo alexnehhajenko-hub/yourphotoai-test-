@@ -43,13 +43,14 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 // --- КОНФИГ ВАРИАНТОВ ---
 
 const STYLE_OPTIONS = [
-  { id: "beauty",  label: "Красивый портрет", description: "Мягкая ретушь этого же человека" },
-  { id: "order",   label: "Орден Тишины",     description: "Эпический фэнтези-мастер в зале колонн" },
-  { id: "demon",   label: "Огненный ритуал",  description: "Свеча, искры и сияющие глаза" },
-  { id: "oil",     label: "Картина маслом",   description: "Художественный стиль с мазками" },
-  { id: "anime",   label: "Аниме",            description: "Стиль аниме-персонажа" },
-  { id: "poster",  label: "Кино-постер",      description: "Контрастный, как в фильме" },
-  { id: "classic", label: "Классический",     description: "Старые мастера" }
+  { id: "beauty",  label: "Красивый портрет",    description: "Мягкая ретушь этого же человека" },
+  { id: "order",   label: "Орден Тишины",        description: "Эпический мастер в зале колонн" },
+  { id: "demon",   label: "Огненный ритуал",     description: "Свеча, искры и сияние глаз" },
+  { id: "gravity", label: "Нарушенная гравитация", description: "Комната, вещи и кофе летят в воздухе" },
+  { id: "oil",     label: "Картина маслом",      description: "Художественный стиль с мазками" },
+  { id: "anime",   label: "Аниме",               description: "Стиль аниме-персонажа" },
+  { id: "poster",  label: "Кино-постер",         description: "Контрастный, как в фильме" },
+  { id: "classic", label: "Классический",        description: "Старые мастера" }
 ];
 
 const SKIN_EFFECTS = [
