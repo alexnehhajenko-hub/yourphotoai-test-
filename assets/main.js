@@ -43,14 +43,11 @@ const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 // --- КОНФИГ ВАРИАНТОВ ---
 
 const STYLE_OPTIONS = [
-  { id: "beauty",  label: "Красивый портрет",    description: "Мягкая ретушь этого же человека" },
-  { id: "order",   label: "Орден Тишины",        description: "Эпический мастер в зале колонн" },
-  { id: "demon",   label: "Огненный ритуал",     description: "Свеча, искры и сияние глаз" },
-  { id: "gravity", label: "Нарушенная гравитация", description: "Комната, вещи и кофе летят в воздухе" },
-  { id: "oil",     label: "Картина маслом",      description: "Художественный стиль с мазками" },
-  { id: "anime",   label: "Аниме",               description: "Стиль аниме-персонажа" },
-  { id: "poster",  label: "Кино-постер",         description: "Контрастный, как в фильме" },
-  { id: "classic", label: "Классический",        description: "Старые мастера" }
+  { id: "beauty",  label: "Красивый портрет", description: "Светлый, гладкая кожа, без морщин" },
+  { id: "oil",     label: "Картина маслом",   description: "Художественный стиль с мазками" },
+  { id: "anime",   label: "Аниме",            description: "Стиль аниме-персонажа" },
+  { id: "poster",  label: "Кино-постер",      description: "Контрастный, как в фильме" },
+  { id: "classic", label: "Классический",     description: "Старые мастера" }
 ];
 
 const SKIN_EFFECTS = [
@@ -67,7 +64,14 @@ const MIMIC_EFFECTS = [
   { id: "neutral",         label: "Нейтральное лицо",     description: "Спокойное" },
   { id: "serious",         label: "Серьёзное лицо",       description: "Без улыбки" },
   { id: "eyes-bigger",     label: "Глаза больше",         description: "Чуть крупнее" },
-  { id: "eyes-brighter",   label: "Глаза ярче",           description: "Выразительный взгляд" }
+  { id: "eyes-brighter",   label: "Глаза ярче",           description: "Выразительный взгляд" },
+
+  // НОВОЕ: спец-сцена с нарушенной гравитацией
+  {
+    id: "gravity-room",
+    label: "Сцена: нарушена гравитация",
+    description: "Парящие предметы, кофе в воздухе, свет снизу"
+  }
 ];
 
 const GREETING_OPTIONS = [
@@ -126,8 +130,8 @@ function openSheetFor(type) {
   }
 
   if (type === "mimic") {
-    sheetTitle.textContent = "Мимика и эмоции";
-    sheetDescription.textContent = "Настройте настроение выражения лица.";
+    sheetTitle.textContent = "Мимика и сцены";
+    sheetDescription.textContent = "Настройте выражение лица и особые сцены.";
     MIMIC_EFFECTS.forEach((opt) => {
       const chip = document.createElement("button");
       chip.className = "chip";
