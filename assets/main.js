@@ -28,7 +28,7 @@ const btnGenerate = document.getElementById("btnGenerate");
 const btnAddPhoto = document.getElementById("btnAddPhoto");
 const btnPay = document.getElementById("btnPay");
 const btnClearEffects = document.getElementById("btnClearEffects");
-const btnVip = document.getElementById("btnVip"); // новая кнопка VIP-режимов
+const btnVip = document.getElementById("btnVip"); // кнопка VIP-режимов
 
 const downloadLink = document.getElementById("downloadLink");
 const fileInput = document.getElementById("fileInput");
@@ -55,7 +55,7 @@ const STYLE_OPTIONS = [
 
 const SKIN_EFFECTS = [
   { id: "no-wrinkles", label: "Убрать морщины",      description: "Мягкая ретушь" },
-  { id: "younger",     label: "Омолодить на 20 лет", description: "Минус ~20 лет" },
+  { id: "younger",     label: "Омолодить",           description: "Чуть свежее лицо" },
   { id: "smooth-skin", label: "Сгладить кожу",       description: "Ровный тон" }
 ];
 
@@ -86,7 +86,8 @@ const VIP_PRESETS = [
     description: "Комната, где гравитация сломана: волосы и предметы чуть парят.",
     basePrompt: `
 highly realistic portrait of the person from the reference photo,
-the SAME face and identity, same gender, same ethnicity, similar age,
+the SAME face and identity, same gender and same ethnicity, same approximate age,
+NO face replacement, NO new person, only edit the world and small beauty retouch,
 visible but natural beauty improvement: smoother skin tone, fewer wrinkles, less puffiness,
 set in a room where gravity is subtly broken,
 hair gently flows slightly upward, small objects and dust float in mid-air,
@@ -103,7 +104,8 @@ clothing is newly generated and updated to fit the scene, neat and well-fitting
     description: "Кадр из дорогого фильма с твоим лицом.",
     basePrompt: `
 ultra cinematic portrait of the person from the reference photo,
-the SAME identity and facial features, same gender and same ethnicity, similar age,
+the SAME identity and facial features, same gender and ethnicity, same approximate age,
+NO face replacement, NO random attractive model, always the same person,
 captured as a still frame from a high-budget movie,
 dramatic soft lighting, volumetric light, subtle film grain,
 background with symbolic elements of their life: soft city hints, abstract shapes, blurred story details,
@@ -119,6 +121,7 @@ clothing is newly generated as a stylish movie outfit that matches the scene
     basePrompt: `
 surreal realistic portrait of the person from the reference photo,
 same identity and proportions, same gender and ethnicity, clearly the same person,
+NO replacement of the face, only show different ages of the same person,
 their face smoothly transitioning from a younger version on the left side
 to an older version on the right side,
 no hard split line, continuous time gradient,
@@ -137,6 +140,7 @@ clothing is neutral and newly generated so it works for all ages in the frame
 crime scene evidence board style composition,
 central Polaroid-style photo of the person from the reference photo
 pinned to a corkboard, clearly recognisable same face and identity,
+NO other faces, no replacement of the main person,
 surrounded by surreal dream fragments as smaller photos:
 floating staircase, misty corridor, symbolic objects,
 red strings connecting the central portrait to the fragments,
@@ -153,6 +157,7 @@ clothing in the central portrait is newly generated but realistic and simple
     basePrompt: `
 surreal interior portrait of the person from the reference photo sitting or standing in a room,
 same facial identity and proportions, same gender and ethnicity, similar age,
+NO replacement with another model, always the same person,
 all walls, ceiling and floor are made of frozen phone notifications and chat bubbles,
 emails, app icons, message previews forming a 3D mosaic surface,
 one real physical window with natural daylight and no notifications,
@@ -167,13 +172,13 @@ their clothes are newly generated modern casual outfit, slightly lit by the scre
     description: "4 версии одного человека: художник, учёный, киберпанк и спокойный возрастной.",
     basePrompt: `
 group portrait in a single frame,
-the person from the reference photo appears as 3-4 alternate life versions standing together:
-one as an artist with paint on hands,
+the person from the reference photo appears as 3-4 alternate life versions standing together,
+all variants MUST share the SAME identity and ethnicity, same main facial features and bone structure,
+do NOT swap the face with any other actor or model,
+one version as an artist with paint on hands,
 one as a scientist in a lab coat,
 one as a cyberpunk version with subtle neon implants,
 one as a calm older self,
-all faces clearly related and derived from the same base identity and ethnicity,
-same core facial features, same bone structure, different outfits and details,
 soft studio lighting, cinematic composition, ultra detailed, story-rich photo,
 all clothing is newly generated to match each role
 `.trim()
@@ -187,6 +192,7 @@ all clothing is newly generated to match each role
 hyper realistic portrait of the person from the reference photo
 taken by a futuristic smartphone camera from the year 2525,
 same identity, same ethnicity and facial structure, clearly the same person,
+NO generic influencer face, no replacement,
 semi-transparent holographic overlays around the head showing emotions and thoughts
 as floating icons and abstract symbols,
 minimal futuristic UI elements, clean AR interface, volumetric light,
@@ -201,9 +207,9 @@ clothing is newly generated simple futuristic casual outfit that fits the scene
     description: "Ты стоишь перед стеной из фрагментов разных эпох искусства.",
     basePrompt: `
 composite portrait of the person from the reference photo standing in front of a wall
-made of vertical panels from different eras:
-ancient stone carvings, renaissance painting fragments, old film frames, digital glitch screens,
+made of vertical panels from different eras,
 their body and face remain realistic and consistent, same identity, same gender and ethnicity,
+NO replacement of the face, no new person,
 soft museum-like light on their face,
 the background subtly changes style from left to right like a timeline of human art,
 ultra detailed, poetic, slightly surreal, high-end art photography,
@@ -218,6 +224,7 @@ their clothing is newly generated, neutral and timeless so it works with all era
     basePrompt: `
 dreamlike portrait of the person from the reference photo,
 same recognisable face and identity, same gender and ethnicity,
+NO different model, keep the same person,
 parts of their hair and shoulders dissolve into a starry night sky,
 tiny constellations gently shaping the outline of their head and thoughts,
 soft glow around the eyes, subtle cosmic dust,
@@ -235,9 +242,9 @@ clothing is newly generated, dark and simple so it blends into the night sky tra
 epic triptych-style composition in a single frame,
 in the center: realistic portrait of the person from the reference photo, neutral expression,
 on the left side: angelic version of the SAME person with soft light, subtle wings and halo,
-on the right side: darker demonic version of the SAME person with horns or shadow crown and softly glowing eyes,
-all three faces must clearly share the SAME identity, same ethnicity, same bone structure and main facial features,
-do NOT replace the face with a different actor or model,
+on the right side: darker demonic version of the SAME person with soft glowing eyes or subtle horns,
+ALL THREE faces must clearly share the SAME identity, same ethnicity, same bone structure and main facial features,
+ABSOLUTELY NO replacement of the face with another actor or model, only different versions of the same person,
 background gently fades from warm light on the angel side to dark tones on the demon side,
 cinematic lighting, ultra detailed skin and eyes, dramatic but elegant,
 clothing for all three versions is newly generated and matches their role but stays realistic and not cartoonish
@@ -376,7 +383,6 @@ function closeSheet() {
   sheetBackdrop.classList.remove("sheet-open");
 }
 
-// Показываем выбранные параметры над кнопками
 function renderSelections() {
   selectionRow.innerHTML = "";
 
@@ -413,7 +419,6 @@ function renderSelections() {
   }
 }
 
-// Обновляем текстовую плашку поверх превью, если выбрано поздравление
 function updateGreetingOverlay() {
   if (!currentGreeting) {
     greetingOverlay.textContent = "";
@@ -425,7 +430,6 @@ function updateGreetingOverlay() {
   greetingOverlay.style.display = "block";
 }
 
-// Уменьшаем изображение до ~1024px по большей стороне
 function resizeImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -470,7 +474,6 @@ function resizeImage(file) {
 
 // --- ОБРАБОТЧИКИ ---
 
-// Добавить фото
 btnAddPhoto.addEventListener("click", () => {
   fileInput.click();
 });
@@ -491,7 +494,6 @@ fileInput.addEventListener("change", async (e) => {
   }
 });
 
-// Кнопки выбора категорий
 btnStyle.addEventListener("click", () => openSheetFor("style"));
 btnSkin.addEventListener("click", () => openSheetFor("skin"));
 btnMimic.addEventListener("click", () => openSheetFor("mimic"));
@@ -506,12 +508,10 @@ sheetBackdrop.addEventListener("click", (e) => {
   if (e.target === sheetBackdrop) closeSheet();
 });
 
-// Оплата отключена в тесте
 btnPay.addEventListener("click", () => {
   alert("Оплата отключена в тестовом режиме.");
 });
 
-// Очистка эффектов + поздравления + VIP
 if (btnClearEffects) {
   btnClearEffects.addEventListener("click", () => {
     activeEffects.clear();
@@ -522,7 +522,6 @@ if (btnClearEffects) {
   });
 }
 
-// Генерация
 btnGenerate.addEventListener("click", async () => {
   if (
     !resizedImageDataUrl &&
@@ -593,7 +592,6 @@ btnGenerate.addEventListener("click", async () => {
   }
 });
 
-// Инициализация
 renderSelections();
 updateGreetingOverlay();
 if (previewImage) previewImage.style.display = "none";
