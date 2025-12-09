@@ -1,44 +1,43 @@
-// api/generate-vip1.js — VIP: gravity
+// api/generate-vip1.js — VIP стиль #1 (gravity)
 // FLUX-Kontext-Pro (Replicate)
-// Жёсткий акцент: ТОТ ЖЕ человек, только лучшая версия + сцена с «магической гравитацией»
+// Максимально сохраняем ЛИЧНОСТЬ: это тот же человек, только чуть лучше и в спец-сцене
 
 import Replicate from "replicate";
 
-// 1. Блок личности — максимально жёстко фиксируем того же человека
-const IDENTITY_BLOCK = [
-  "ultra realistic portrait of THE SAME person as in the input photo",
-  "this is the BEST IMPROVED VERSION of this person, not a different model or actor",
-  "keep EXACT facial identity: same skull and head shape, same face width and height",
-  "same nose shape and size, same lips shape and fullness, same eyes shape and distance, same jawline",
-  "same gender, same ethnicity, same overall personality and vibe",
-  "age stays almost the same (no more than about 3–5 years younger), do NOT make them a teenager or a different age",
-  "only subtle BEAUTY IMPROVEMENT: reduce eye bags and puffiness, soften dark circles, smooth small wrinkles, even skin tone",
-  "hair can be slightly improved: a bit thicker and fuller, more volume and shape, still realistic",
-  "it is allowed to add some natural looking hair even if the person is partly or mostly bald, but keep the same head shape and overall identity",
-  "keep realistic skin texture and pores, NO plastic skin, NO doll face, NO heavy makeup",
-  "do NOT change bone structure, do NOT change head proportions, do NOT replace the face with another person",
-  "if identity cannot be preserved, prefer to keep the original face with only minimal retouch"
+// Базовый VIP-prompt: тот же человек + сцена со свечой и глубокой тьмой
+const VIP_BASE_PROMPT = [
+  // ЖЁСТКО ФИКСИРУЕМ ЛИЧНОСТЬ
+  "hyper realistic studio portrait of the EXACT SAME person as in the input photo",
+  "face identity must match one to one, like a passport photo vs a selfie of the same human",
+  "use the input face as a hard reference, do NOT change face structure, bone structure or proportions",
+  "keep the same head shape, forehead, hairline, nose width and shape, lips shape, jawline and chin, and the distance between all features",
+  "same gender, same ethnicity, same overall personality",
+  "age stays similar (no more than about 3-5 years younger), do NOT turn them into a teen or a completely different age",
+  "NO face slimming, NO new cheekbones, NO plastic surgery look, absolutely no changing of identity",
+
+  // Ретушь — только мягкое улучшение
+  "only very soft cosmetic retouch: slightly reduce eye bags and puffiness, soften small wrinkles, even the skin tone",
+  "keep realistic skin texture and visible pores, no plastic skin, no over-smoothing",
+  "subtle natural healthy look, not a beauty filter",
+
+  // Волосы и одежда — можно улучшить, но без смены человека
+  "hair can be slightly improved, cleaned up or a bit longer, but must clearly feel like their own hair style and color, not a totally new person",
+  "clothing can change into a simple dark elegant outfit that fits the scene",
+
+  // Сцена gravity-ритуала
+  "they are sitting at a wooden table with a single small candle in front of them",
+  "background is an infinite dark space with a very soft gradient, no text, no symbols, no windows, no screens",
+  "tiny warm golden sparks softly floating above the candle and around the hands, subtle and not distracting",
+  "main light comes from the candle and a very soft invisible studio light, cinematic but realistic",
+  "calm, thoughtful expression, minimalistic composition, premium cinematic portrait, 8k details"
 ].join(", ");
 
-// 2. Сцена «гравитация» — фон, одежда и окружение
-const GRAVITY_SCENE_BLOCK = [
-  "subject sitting at a wooden table with a small glowing bowl or candle in front of them",
-  "large, deep, endless dark background behind them, soft gradient, cinematic studio look",
-  "no visible walls or windows, no room edges, just a deep background fading into darkness",
-  "small glowing particles and dust slowly floating in the air around the subject",
-  "subtle feeling that gravity is slightly broken: a few tiny sparks and dust motes drifting upward",
-  "new clean outfit that fits the scene: simple dark blazer or jacket, subtle elegant style, no logos",
-  "soft warm key light from the front, gentle rim light from behind, cinematic portrait lighting",
-  "no text, no letters, no numbers, no user interface, no screens, no phones, no monitors anywhere in the image",
-  "natural camera perspective, normal head–body proportions, no oversized head"
-].join(", ");
-
-// 3. Эффекты (кожа, мимика и т.п. — те же id, что на фронте)
+// Доп. эффекты (можем переиспользовать те же id, что и на фронте)
 const EFFECT_PROMPTS = {
   "no-wrinkles":
     "fewer visible wrinkles, gentle beauty retouch, keep natural skin texture",
   younger:
-    "looks around 3–5 years younger but clearly the same person, fresher and more rested face",
+    "looks around 5–10 years younger but clearly the same person, fresher and more rested face",
   "smooth-skin":
     "smoother and more even skin tone, reduce blemishes and redness, keep pores and realism",
   "smile-soft": "subtle soft smile, calm and relaxed expression",
@@ -52,16 +51,16 @@ const EFFECT_PROMPTS = {
   "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
 };
 
-// 4. Поздравления (если захочешь совмещать с открытками)
+// Поздравления — если захочешь совмещать VIP + открытки
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year atmosphere around them, soft warm fairy lights in the background, but still NO text on the image",
+    "festive New Year greeting portrait, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
   birthday:
-    "birthday atmosphere, soft bokeh of balloons and confetti in the background, but still NO text on the image",
+    "birthday greeting portrait, balloons, confetti, festive composition, elegant russian handwritten birthday greeting text on the image",
   funny:
-    "playful colorful atmosphere, fun bokeh shapes in the background, but still NO text on the image",
+    "playful humorous greeting portrait, bright colors, fun composition, creative russian handwritten funny greeting text on the image",
   scary:
-    "subtle dark horror atmosphere, moody lighting and shadow shapes in the background, but still NO text on the image"
+    "dark horror themed greeting portrait, spooky lighting, eerie atmosphere, creepy russian handwritten horror greeting text on the image"
 };
 
 export default async function handler(req, res) {
@@ -70,7 +69,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // --- разбор тела запроса ---
     let body = req.body;
     if (typeof body === "string") {
       try {
@@ -84,7 +82,7 @@ export default async function handler(req, res) {
 
     const userPrompt = (text || "").trim();
 
-    // --- эффекты (кожа, мимика и т.п.) ---
+    // Эффекты
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -93,32 +91,20 @@ export default async function handler(req, res) {
         .join(", ");
     }
 
-    // --- поздравление / атмосфера ---
+    // Поздравление (если нужно)
     let greetingPrompt = "";
     if (greeting && GREETING_PROMPTS[greeting]) {
       greetingPrompt = GREETING_PROMPTS[greeting];
     }
 
-    // --- итоговый prompt ---
-    const promptParts = [
-      IDENTITY_BLOCK,
-      GRAVITY_SCENE_BLOCK
-    ];
-
+    // Итоговый prompt
+    const promptParts = [VIP_BASE_PROMPT];
     if (userPrompt) promptParts.push(userPrompt);
     if (effectsPrompt) promptParts.push(effectsPrompt);
     if (greetingPrompt) promptParts.push(greetingPrompt);
 
-    // Доп. защита от чужих лиц и текста
-    promptParts.push(
-      "do NOT generate any other faces or characters in the frame",
-      "the only visible person is the subject from the input photo",
-      "no text, no captions, no watermarks, no UI elements, no logos"
-    );
-
     const prompt = promptParts.join(". ").trim();
 
-    // --- вход для Replicate ---
     const input = {
       prompt,
       output_format: "jpg"
@@ -155,9 +141,7 @@ export default async function handler(req, res) {
     }
 
     if (!imageUrl) {
-      return res.status(500).json({
-        error: "No image URL returned"
-      });
+      return res.status(500).json({ error: "No image URL returned" });
     }
 
     return res.status(200).json({
@@ -165,9 +149,9 @@ export default async function handler(req, res) {
       image: imageUrl
     });
   } catch (err) {
-    console.error("VIP GRAVITY GENERATION ERROR:", err);
+    console.error("VIP GENERATION ERROR:", err);
     return res.status(500).json({
-      error: "VIP gravity generation failed",
+      error: "VIP generation failed",
       details: err?.message || String(err)
     });
   }
