@@ -1,78 +1,84 @@
-// api/generate-vip1.js — VIP style #1 (broken gravity room)
+// api/generate-vip1.js — VIP style #1 (broken gravity room, HARD identity lock)
 // FLUX-Kontext-Pro (Replicate)
-// Цель: МАКСИМАЛЬНО ТОЧНОЕ СХОДСТВО С ОРИГИНАЛОМ + эффектная сцена.
-// Лицо почти не меняем, только мягкая ретушь. Никаких чужих лиц.
+// Цель: лицо = тот же человек, минимальные правки кожи, меняем только сцену/свет/одежду.
 
 import Replicate from "replicate";
 
-// Базовый VIP-prompt: жёсткое совпадение лица + сцена с гравитацией
+// Базовый VIP-prompt: максимально точное сходство
 const VIP_BASE_PROMPT = [
-  // ЛИЧНОСТЬ: максимум сходства
+  // ЛИЦО: жёсткий запрет на подмену
   "ultra realistic portrait of the EXACT SAME person as in the reference photo",
-  "match the reference face AS CLOSELY AS POSSIBLE",
-  "same face shape, same head size, same nose, same eyes, same lips, same jawline and bone structure",
-  "same gender, same ethnicity, same approximate age as in the reference",
-  "do NOT beautify by changing the face structure, do NOT swap the face, do NOT replace with another person",
-  "no face morphing into a model, no new identity, no new race, no new gender",
+  "the face identity MUST MATCH the reference as closely as possible",
+  "same face shape, same head size, same nose shape, same lips, same eyes, same jawline and bone structure",
+  "same gender and same ethnicity as in the reference",
+  "same approximate age as the reference, do NOT make them much younger or older",
+  "do NOT replace the person with a different model, do NOT change gender, do NOT change ethnicity",
+  "no beauty transformation that changes facial structure, no new identity, no face swap",
 
-  // ПОЗА / РАКУРС
+  // ПОЗА / КАДРИРОВАНИЕ
   "keep a similar head angle and pose to the reference photo if possible",
-  "framing similar to a portrait photo: head and shoulders or half body",
-  "do NOT zoom too far out, keep the face large and clear in the frame",
+  "framing similar to a portrait: head and shoulders or half body, face large in the frame",
+  "do NOT zoom out too far, the face must be the main focus",
 
-  // КОЖА: очень мягкая ретушь
-  "very subtle retouch only: slightly reduce strong eye bags, slightly soften deep wrinkles",
-  "keep natural skin texture and pores, keep freckles and characteristic marks",
-  "no plastic skin, no overly smoothed beauty filter, keep them looking real and grounded",
-  "overall skin tone a bit more even and healthy but still realistic",
+  // КОЖА: почти без ретуши
+  "keep all main facial features, moles, freckles and characteristic marks",
+  "very small softening of extremely deep eye bags or harsh shadows is allowed, but keep natural wrinkles",
+  "keep realistic skin texture and pores, absolutely no plastic skin, no airbrushed beauty filter",
+
+  // ВОЛОСЫ
+  "keep the same hairline, same hairstyle type and same hair length as the reference, adapted slightly to lighting if needed",
+  "do not give them completely new hair or a different style that changes identity",
 
   // ОДЕЖДА
-  "clothing can be gently upgraded to fit the scene, like a clean simple shirt or t-shirt or casual jacket",
-  "outfit must remain realistic and believable for this person, no costume, no armor, no fantasy outfit",
+  "clothing can be upgraded slightly to a clean simple outfit that fits the scene, like a plain shirt, t-shirt or jacket",
+  "outfit must remain realistic for this person, no fantasy armor, no costume, no cosplay",
 
   // СЦЕНА VIP #1 — ЛОМАЮЩАЯСЯ ГРАВИТАЦИЯ
-  "they are sitting or standing in a large endless room where gravity is subtly broken",
-  "background is a deep, soft, infinite space fading into darkness or soft color, no visible frame or border around the head",
-  "a glowing circular pool or disk of light in front of them on the table or floor, emitting soft light upwards",
-  "small glowing particles, dust, and light papers floating slowly in the air around them",
-  "hair reacts slightly to strange gravity: just a bit lifted or subtly moving, not extreme",
-  "soft cinematic lighting from the glowing pool, with gentle contrast on the face",
-  "mood: calm, thoughtful, slightly mysterious, but still realistic and human",
+  "they are in a large endless room where gravity is subtly broken",
+  "background is a deep soft infinite space fading into darkness or a very soft color gradient",
+  "no visible hard frame, no photo border, no corkboard, no Polaroid frames",
+  "a glowing circular pool or disk of light in front of them on the table or floor, casting light upwards",
+  "small glowing particles, dust and a few light papers floating slowly in mid-air",
+  "hair reacts just a bit to the strange gravity, very subtle upward motion, not extreme",
+  "soft cinematic lighting from the glowing pool, gentle contrast on the face, realistic color grading",
 
   // КОМПОЗИЦИЯ
-  "clean full-frame portrait composition, no separate Polaroid frames, no collage layout",
-  "background should be one continuous environment, not a corkboard, not screenshots, not UI",
+  "single clean full-frame portrait, only one person in the image",
+  "no extra faces, no collage, no multiple photos inside the frame",
+  "background must be one continuous environment, not UI, not screenshots, not evidence board",
 
-  // ЗАПРЕТЫ: текст/рамки/скрины
-  "no text, no dates, no watermarks, no captions, no phone UI elements",
-  "no borders, no photo frames, no pinned Polaroids, no evidence board layout",
-  "no extra faces other than the main person",
+  // ЖЁСТКИЕ ЗАПРЕТЫ: текст/рамки/интерфейсы
+  "no text, no numbers, no dates, no signatures, no UI elements, no camera interface",
+  "no borders around the image, no Polaroid-style frames, no pins or nails",
 
   // КАЧЕСТВО
-  "high resolution, premium portrait photography, shallow depth of field, background softly blurred",
-  "cinematic color grading, but still natural skin tones"
+  "high resolution, premium portrait photography look",
+  "shallow depth of field with softly blurred background",
+  "natural skin tones, cinematic but realistic colors"
 ].join(", ");
 
-// Доп. эффекты (используем те же id, что на фронте)
+// Доп. эффекты: только ОЧЕНЬ мягкие изменения, без смены лица
 const EFFECT_PROMPTS = {
   "no-wrinkles":
-    "slightly softer wrinkles but still visible and realistic, keep natural skin texture",
+    "very slightly softer deepest wrinkles while keeping them visible and realistic, keep all skin texture",
   younger:
-    "face looks just a little more rested and fresh but clearly the same age range, not drastically younger",
+    "face looks just a little more rested and fresh but clearly the same age range and same identity",
   "smooth-skin":
-    "slightly smoother and more even skin tone, keep pores and micro texture, no plastic look",
-  "smile-soft": "very subtle soft smile, relaxed and calm expression",
-  "smile-big": "natural bigger smile while keeping the same facial identity",
+    "slightly more even skin tone, keep pores and micro texture, avoid beauty-filter look",
+  "smile-soft": "very subtle soft smile, relaxed and calm expression, same face",
+  "smile-big": "natural bigger smile while keeping exactly the same face identity",
   "smile-hollywood":
-    "wide smile with visible teeth, but still clearly the same person, no new face",
-  laugh: "laughing with a bright smile, joyful and natural expression, same face identity",
-  neutral: "neutral relaxed face, no strong emotion, same look as reference",
-  serious: "serious focused expression, no smile, but same features",
-  "eyes-bigger": "eyes just a tiny bit more open, but still realistic and same shape",
-  "eyes-brighter": "slightly brighter and clearer eyes, more vivid gaze"
+    "wide smile with visible teeth, still clearly the same person, no model face",
+  laugh: "laughing with a bright smile, joyful but still the same identity",
+  neutral: "neutral relaxed expression similar to the reference",
+  serious: "serious focused expression without smile, same features",
+  "eyes-bigger":
+    "eyes just a tiny bit more open, same shape and size range, still realistic",
+  "eyes-brighter":
+    "slightly brighter eyes with clearer irises, same color and shape"
 };
 
-// Поздравления (если совмещаешь VIP + открытку)
+// Поздравления — если совмещаешь VIP + открытку
 const GREETING_PROMPTS = {
   "new-year":
     "festive New Year greeting portrait, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
