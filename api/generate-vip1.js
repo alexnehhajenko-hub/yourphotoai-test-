@@ -1,36 +1,47 @@
 // api/generate-vip1.js — VIP style #1 (broken gravity room)
 // Uses FLUX-Kontext-Pro (Replicate)
-// Goal: SAME PERSON, better-looking version, plus special "gravity" scene.
+// Цель: ТОТ ЖЕ ЧЕЛОВЕК, лёгкое улучшение + спец-сцена с гравитацией,
+// без чужих лиц, без рамок и надписей.
 
 import Replicate from "replicate";
 
-// Base VIP prompt: same identity + beauty retouch + broken gravity scene
+// Base VIP prompt: identity + beauty + gravity scene
 const VIP_BASE_PROMPT = [
-  // identity & beauty rules
-  "highly realistic portrait of the SAME person as in the input photo",
+  // ЛИЧНОСТЬ: максимально прижимаем к исходному фото
+  "ultra realistic portrait of the SAME person as in the input photo",
   "this is the BEST IMPROVED VERSION of this person, not a different model",
-  "keep exact facial identity: same face shape, nose, eyes, lips, jawline and head proportions",
-  "same gender, same ethnicity, same overall personality",
-  "age stays similar, at most 5–10 years younger, do NOT turn them into a teenager or a completely different age",
-  "subtle BEAUTY IMPROVEMENT ONLY: remove eye bags and puffiness, reduce dark circles, smooth small wrinkles, slightly slimmer cheeks if needed",
-  "even and healthy skin tone, reduce redness and blemishes, keep realistic skin texture and pores, no plastic or doll-like skin",
-  "do NOT change bone structure, do NOT replace the face with another person",
-  "they must be clearly recognisable as the same person in real life",
-  "soft, flattering cinematic lighting on the face, no harsh shadows",
-  "calm, confident or slightly hopeful facial expression, not angry and not extremely sad",
-  "outfit gently upgraded to match the scene: clean, well-fitting modern clothes that suit their personality",
+  "keep EXACT facial identity: same head shape, same face shape, same nose, eyes, lips, jawline and head proportions as in the reference",
+  "same gender, same ethnicity, same approximate age, do NOT turn them into a teenager or a much older person",
+  "do NOT change bone structure, do NOT replace the face, do NOT swap to another person",
+  "hair style stays very close to the reference photo, only slightly cleaned up if needed, no totally new haircut",
+  "head size relative to the body stays the same as in the reference, do NOT make a bigger or smaller head",
 
-  // gravity scene
-  "set in a room where gravity is subtly broken",
-  "their hair gently moves or flows slightly upward, following strange gravity",
-  "small objects and dust around them softly floating in mid-air",
-  "papers or light particles drifting in different directions",
-  "main light source is a glowing pool of light on the table or floor in front of them, casting soft cinematic light from below",
-  "soft atmospheric background, slightly surreal but still realistic photo",
-  "high resolution, premium portrait photography, shallow depth of field"
+  // КРАСОТА: только мягкая косметика
+  "subtle BEAUTY IMPROVEMENT ONLY: gently reduce eye bags and puffiness, reduce dark circles, soften small wrinkles",
+  "slightly more even and healthy skin tone, reduce redness and blemishes, keep real skin texture and pores, no plastic or doll-like skin",
+  "no extreme smoothing, no over-beauty filters, it must look like a real person",
+  "soft, flattering cinematic lighting on the face, not harsh, not flat",
+  "calm, confident or slightly thoughtful expression, not angry and not overly sad",
+
+  // ОДЕЖДА
+  "outfit can be slightly upgraded but still realistic and believable for this person",
+  "clean, well-fitting clothes that match the scene, no flashy costumes unless implied by the scene",
+
+  // СЦЕНА VIP #1 — ЛОМАЮЩАЯСЯ ГРАВИТАЦИЯ
+  "they are in a large spacious room where gravity is subtly broken",
+  "background is a deep endless space or hall fading softly into darkness, no visible walls touching the head, no frames",
+  "small glowing particles, dust and light papers slowly floating in mid-air around them",
+  "a glowing pool or circle of light in front of them on the table or floor, casting soft cinematic light from below",
+  "hair reacts slightly to the strange gravity, gently moving or lifting a little",
+  "overall mood: cinematic, slightly surreal but still realistic and grounded",
+  "high resolution, premium portrait photography, shallow depth of field, background softly blurred",
+
+  // ЗАПРЕТЫ НА ТЕКСТ/РАМКИ
+  "no text, no captions, no dates, no watermarks, no UI elements, no phone screenshots inside the image",
+  "no borders, no frames, no Polaroid layout, just a clean full-screen portrait composition"
 ].join(", ");
 
-// Extra effects (same IDs as on the frontend)
+// Доп. эффекты (те же id, что на фронте)
 const EFFECT_PROMPTS = {
   "no-wrinkles":
     "fewer visible wrinkles, gentle beauty retouch, keep natural skin texture",
@@ -49,7 +60,7 @@ const EFFECT_PROMPTS = {
   "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
 };
 
-// Greetings — in case you combine VIP + postcards
+// Поздравления (если совмещаешь VIP + открытку)
 const GREETING_PROMPTS = {
   "new-year":
     "festive New Year greeting portrait, glowing warm lights, snow, elegant russian handwritten greeting text on the image",
@@ -80,7 +91,7 @@ export default async function handler(req, res) {
 
     const userPrompt = (text || "").trim();
 
-    // effects
+    // эффекты
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -89,13 +100,13 @@ export default async function handler(req, res) {
         .join(", ");
     }
 
-    // greeting
+    // поздравление
     let greetingPrompt = "";
     if (greeting && GREETING_PROMPTS[greeting]) {
       greetingPrompt = GREETING_PROMPTS[greeting];
     }
 
-    // final prompt
+    // собираем итоговый prompt
     const promptParts = [VIP_BASE_PROMPT];
     if (userPrompt) promptParts.push(userPrompt);
     if (effectsPrompt) promptParts.push(effectsPrompt);
