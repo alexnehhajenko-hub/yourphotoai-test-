@@ -13,41 +13,44 @@ const IDENTITY_PREFIX = [
   "ultra realistic portrait of the SAME person as in the input photo",
   "this is the BEST IMPROVED VERSION of this person, not a different model",
   "keep exact facial identity: same head shape, nose, eyes, lips, jawline and proportions",
-  "same gender, same ethnicity, same overall personality and age (at most 5–10 years younger)",
+  "same gender, same ethnicity, same overall personality and similar age (at most 5–10 years younger)",
+  "keep the same general hairstyle and hairline as in the input, do NOT turn short hair into long hair or the opposite",
   "do NOT change the bone structure or replace the face with someone else",
   "they must be clearly recognisable as the same person in all images"
 ].join(", ");
 
-// Шаг 1 — мягкая чистка лица
+// Шаг 1 — мягкая, но заметная чистка лица
 const STEP1_FACE_CLEANUP = [
-  "subtle beauty retouch only",
+  "subtle but visible beauty retouch",
   "remove eye bags and puffiness",
-  "gently reduce dark circles",
-  "smooth small wrinkles while keeping natural skin texture and pores",
-  "even skin tone, no plastic or doll skin",
-  "neutral soft studio background, no props",
-  "soft front lighting"
+  "strongly reduce dark circles",
+  "smooth small and medium wrinkles while keeping natural skin texture and pores",
+  "even skin tone, remove redness and blemishes, no plastic or doll skin",
+  "slightly softer and more relaxed expression, but still natural",
+  "neutral soft studio background without texture, no props, no text",
+  "soft front lighting that flatters the face"
 ].join(", ");
 
 // Шаг 2 — сцена со сломанной гравитацией
 const STEP2_GRAVITY_SCENE = [
-  "set in a large dim room where gravity is subtly broken",
-  "infinite feeling background that fades into soft darkness, no visible walls or text",
-  "a glowing liquid pool or bowl of light on the table in front of them",
-  "small particles, dust and papers floating gently in mid-air around",
-  "new clean clothing that fits the scene, elegant but simple, no logos or text",
+  "set in a large endless dark room where gravity is subtly broken",
+  "background feels like an infinite deep space with very soft bokeh lights, no walls, no edges, no visible horizon and no text",
+  "a bright glowing liquid pool or bowl of light on the table in front of them",
+  "stronger reflections of the glowing light on the face and hands",
+  "papers, dust and small particles clearly floating in mid-air in front of and behind the person",
+  "new clean clothing that fits the scene, elegant and simple, no logos or text, different from the input photo if needed",
   "do not crop the person too tight, show upper body and hands near the glowing pool",
-  "no extra faces in the background"
+  "no extra faces or people in the background"
 ].join(", ");
 
 // Шаг 3 — киношный полиш
 const STEP3_CINEMATIC_POLISH = [
-  "cinematic color grading",
-  "subtle film grain",
+  "cinematic color grading with warm light from the glowing pool and cooler background",
+  "subtle film grain and light vignetting",
   "soft depth of field and bokeh lights in the far background",
-  "preserve the same face and composition from the previous image",
+  "preserve exactly the same face, hairstyle and composition from the previous image",
   "do not change age, gender, ethnicity or facial features",
-  "final premium look ready for printing"
+  "final premium look ready for high quality printing"
 ].join(", ");
 
 // Эффекты (кожа + мимика) — те же id, что на фронте
@@ -69,16 +72,16 @@ const EFFECT_PROMPTS = {
   "eyes-brighter": "brighter eyes, clearer irises, more vivid gaze"
 };
 
-// Поздравления — без русских надписей, только общий стиль
+// Поздравления, без текстовых надписей
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year greeting mood, warm lights, snow in the background",
+    "festive New Year greeting mood, warm lights, snow in the background, but no visible text",
   birthday:
-    "birthday celebration mood, balloons and confetti in the background",
+    "birthday celebration mood, balloons and confetti in the background, but no visible text",
   funny:
-    "playful humorous atmosphere, bright colors and fun composition",
+    "playful humorous atmosphere, bright colors and fun composition, but no visible text",
   scary:
-    "dark horror themed atmosphere, spooky lighting and eerie background details"
+    "dark horror themed atmosphere, spooky lighting and eerie background details, but no visible text"
 };
 
 // Вспомогательная функция извлечения URL
@@ -160,7 +163,7 @@ export default async function handler(req, res) {
     const step1Prompt = [
       IDENTITY_PREFIX,
       STEP1_FACE_CLEANUP,
-      effectsPrompt // сюда можно дать омоложение/кожу
+      effectsPrompt // кожа/омоложение
     ]
       .filter(Boolean)
       .join(". ");
@@ -176,7 +179,7 @@ export default async function handler(req, res) {
     const step2Prompt = [
       IDENTITY_PREFIX,
       STEP2_GRAVITY_SCENE,
-      effectsPrompt, // здесь уже мимика/эмоции тоже помогут
+      effectsPrompt, // мимика, взгляд
       greetingPrompt,
       userPrompt
     ]
