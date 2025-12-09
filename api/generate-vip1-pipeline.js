@@ -13,6 +13,8 @@ const IDENTITY_BLOCK = [
   "same gender, same ethnicity, same overall personality and vibe",
   "age stays almost the same (no more than about 3–5 years younger), do NOT make them a teenager or a different age",
   "only subtle BEAUTY IMPROVEMENT: reduce eye bags and puffiness, soften dark circles, smooth small wrinkles, even skin tone",
+  "hair can be slightly improved: a bit thicker and fuller, more volume and shape, still realistic",
+  "it is allowed to add some natural looking hair even if the person is partly or mostly bald, but keep the same head shape and overall identity",
   "keep realistic skin texture and pores, NO plastic skin, NO doll face, NO heavy makeup",
   "do NOT change bone structure, do NOT change head proportions, do NOT replace the face with another person",
   "if identity cannot be preserved, prefer to keep the original face with only minimal retouch"
@@ -135,7 +137,6 @@ export default async function handler(req, res) {
       { input }
     );
 
-    // --- вытаскиваем URL ---
     let imageUrl = null;
 
     if (Array.isArray(output)) {
