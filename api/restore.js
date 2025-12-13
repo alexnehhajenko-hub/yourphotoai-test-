@@ -1,83 +1,48 @@
-// api/restore.js
-// Photo restoration (single + group photos)
-// Goal: restore damage/blur/fading while preserving ALL people and their identities.
-// Replicate: FLUX-Kontext-Pro
+// api/restore.js — RESTORE (реставрация старых фото, включая групповые)
+// FLUX-Kontext-Pro (Replicate)
+// Цель: восстановить фото + УБРАТЬ РАМКИ/ОБРЫВКИ/ПОЛЯ старой бумаги
+// Важно: сохранить ВСЕХ людей, лица и композицию
 
 import Replicate from "replicate";
 
-/**
- * STRICT archival restoration prompt
- * - MUST keep all people
- * - MUST preserve identity, pose, composition
- * - MUST NOT add/remove people
- * - No beautification / no cinematic re-imagining
- */
 const RESTORE_BASE_PROMPT = [
-  "archival photo restoration of the ORIGINAL photograph",
-  "restore damage, scratches, dust, stains, creases, and fading",
-  "improve clarity and contrast gently, remove haze, reduce blur slightly",
-  "preserve the exact composition, framing, camera angle, and background structure",
-  "DO NOT add or remove people",
-  "DO NOT crop out people",
-  "preserve EVERY person in the photo, keep all faces and bodies present",
-  "DO NOT change facial identity of any person",
-  "DO NOT change age, gender, ethnicity, expression, pose, or body proportions",
-  "DO NOT replace faces, do not merge faces, do not invent new faces",
-  "preserve original clothing and hairstyle style (do not redesign outfits)",
-  "keep realistic skin texture, no plastic skin, no beauty retouching",
-  "no stylization, no cinematic look, no fantasy, no painting",
-  "no text, no captions, no watermark, no logo, no signature"
+  // --- PRIMARY GOAL ---
+  "photo restoration of the input image",
+  "restore and enhance the original photo, keep it realistic and historically plausible",
+
+  // --- PEOPLE / IDENTITY / GROUP SAFETY ---
+  "preserve ALL people in the photo, do NOT remove anyone",
+  "preserve the original number of people, their positions, poses and relative sizes",
+  "do NOT merge people, do NOT replace faces, do NOT generate a different person",
+  "keep facial identity for each person as close as possible to the source photo",
+  "do NOT beautify heavily, keep authentic facial features",
+  "do NOT change body proportions, do NOT change head sizes",
+  "keep clothing style consistent with the original era unless colorization requires subtle adaptation",
+
+  // --- DAMAGE REMOVAL ---
+  "remove scratches, dust, stains, cracks, fold marks, blotches",
+  "reduce blur and restore sharpness carefully, avoid over-sharpening",
+  "restore missing details naturally where possible",
+  "improve contrast and dynamic range, keep natural look",
+  "restore skin tones (if colorized) with realism, no plastic skin",
+  "keep film grain subtle and realistic",
+
+  // --- FRAME / BORDER REMOVAL (THIS IS THE KEY PART) ---
+  "REMOVE any photo border, frame, paper edges, torn edges, white margins, black margins, scanner borders",
+  "do NOT keep the old paper boundary or remaining corners",
+  "extend and reconstruct the image to a clean full-rectangle photo (full frame)",
+  "fill missing outer areas naturally based on the scene, seamless background continuation",
+  "final image must look like a normal complete photo without any leftover frame",
+
+  // --- HARD NEGATIVES ---
+  "NO text, NO watermarks, NO logos, NO UI elements",
+  "NO polaroid style, NO evidence board, NO collage, NO split frame",
+  "NO adding extra people, NO removing people, NO changing identities"
 ].join(", ");
-
-/**
- * Optional: gentle colorization for old black-and-white photos
- * (kept conservative; can be turned on by passing colorize=true)
- */
-const COLORIZE_PROMPT = [
-  "optional gentle natural colorization if the original is black and white",
-  "colors must be realistic and subtle, consistent across the whole image",
-  "do not change any person or object, only add plausible natural color"
-].join(", ");
-
-/**
- * Optional: extra care for group photos: emphasize multi-face preservation.
- * (If client sends isGroup=true we add this. Default prompt already enforces it.)
- */
-const GROUP_GUARD_PROMPT = [
-  "this is a family/group photo",
-  "there are multiple people; preserve ALL of them",
-  "do not pick one main subject; restore the entire scene equally"
-].join(", ");
-
-function json(res, status, data) {
-  res.status(status).setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-}
-
-function pickImageUrl(output) {
-  let imageUrl = null;
-
-  if (Array.isArray(output)) {
-    imageUrl = output[0];
-  } else if (output?.output) {
-    if (Array.isArray(output.output)) imageUrl = output.output[0];
-    else if (typeof output.output === "string") imageUrl = output.output;
-  } else if (typeof output === "string") {
-    imageUrl = output;
-  } else if (output?.url) {
-    try {
-      imageUrl = output.url();
-    } catch {
-      // ignore
-    }
-  }
-
-  return imageUrl;
-}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return json(res, 405, { error: "Method Not Allowed" });
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
@@ -90,61 +55,62 @@ export default async function handler(req, res) {
       }
     }
 
-    const {
-      photo,
-      // Optional hints from client (safe defaults if omitted)
-      isGroup = false,
-      colorize = false,
-      // Optional additional notes (kept very short; avoid user injecting stylization)
-      note = ""
-    } = body || {};
+    const { photo, text } = body || {};
+    const userPrompt = (text || "").trim();
 
     if (!photo) {
-      return json(res, 400, { error: "Missing photo" });
+      return res.status(400).json({ error: "No photo provided" });
     }
 
-    const noteClean = String(note || "").trim().slice(0, 200);
+    // Итоговый prompt
+    // (userPrompt можно использовать, если хочешь усилить цветизацию/контраст/и т.п.)
+    const prompt = userPrompt
+      ? `${RESTORE_BASE_PROMPT}. ${userPrompt}`
+      : RESTORE_BASE_PROMPT;
 
-    const promptParts = [RESTORE_BASE_PROMPT];
-
-    if (isGroup) promptParts.push(GROUP_GUARD_PROMPT);
-    if (colorize) promptParts.push(COLORIZE_PROMPT);
-    if (noteClean) {
-      // Only allow safe, restoration-oriented notes (very conservative)
-      promptParts.push(
-        `extra restoration note (do not stylize, do not change people): ${noteClean}`
-      );
-    }
-
-    const prompt = promptParts.join(". ").trim();
+    const input = {
+      prompt,
+      output_format: "jpg",
+      input_image: photo
+    };
 
     const replicate = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const input = {
-      prompt,
-      input_image: photo,
-      output_format: "jpg"
-    };
+    const output = await replicate.run(
+      "black-forest-labs/flux-kontext-pro",
+      { input }
+    );
 
-    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
-      input
-    });
+    let imageUrl = null;
 
-    const imageUrl = pickImageUrl(output);
-
-    if (!imageUrl) {
-      return json(res, 500, { error: "No image URL returned" });
+    if (Array.isArray(output)) {
+      imageUrl = output[0];
+    } else if (output?.output) {
+      if (Array.isArray(output.output)) imageUrl = output.output[0];
+      else if (typeof output.output === "string") imageUrl = output.output;
+    } else if (typeof output === "string") {
+      imageUrl = output;
+    } else if (output?.url) {
+      try {
+        imageUrl = output.url();
+      } catch {
+        // ignore
+      }
     }
 
-    return json(res, 200, {
+    if (!imageUrl) {
+      return res.status(500).json({ error: "No image URL returned" });
+    }
+
+    return res.status(200).json({
       ok: true,
       image: imageUrl
     });
   } catch (err) {
     console.error("RESTORE ERROR:", err);
-    return json(res, 500, {
+    return res.status(500).json({
       error: "Restore failed",
       details: err?.message || String(err)
     });
