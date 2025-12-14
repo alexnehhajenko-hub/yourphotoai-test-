@@ -1,44 +1,67 @@
-// api/restore.js — RESTORE (реставрация старых фото, включая групповые)
-// FLUX-Kontext-Pro (Replicate)
-// Цель: восстановить фото + УБРАТЬ РАМКИ/ОБРЫВКИ/ПОЛЯ старой бумаги
-// Важно: сохранить ВСЕХ людей, лица и композицию
+// api/restore.js — Photo Restoration (group-safe, keep identities)
+// Uses FLUX-Kontext-Pro (Replicate)
 
 import Replicate from "replicate";
 
 const RESTORE_BASE_PROMPT = [
-  // --- PRIMARY GOAL ---
-  "photo restoration of the input image",
-  "restore and enhance the original photo, keep it realistic and historically plausible",
+  // Главная цель
+  "restore and enhance the old photo while preserving the original content",
 
-  // --- PEOPLE / IDENTITY / GROUP SAFETY ---
-  "preserve ALL people in the photo, do NOT remove anyone",
-  "preserve the original number of people, their positions, poses and relative sizes",
-  "do NOT merge people, do NOT replace faces, do NOT generate a different person",
-  "keep facial identity for each person as close as possible to the source photo",
-  "do NOT beautify heavily, keep authentic facial features",
-  "do NOT change body proportions, do NOT change head sizes",
-  "keep clothing style consistent with the original era unless colorization requires subtle adaptation",
+  // Жёстко: никого не убирать и не добавлять
+  "DO NOT remove any people",
+  "DO NOT add new people",
+  "keep the same number of people and their positions",
 
-  // --- DAMAGE REMOVAL ---
-  "remove scratches, dust, stains, cracks, fold marks, blotches",
-  "reduce blur and restore sharpness carefully, avoid over-sharpening",
-  "restore missing details naturally where possible",
-  "improve contrast and dynamic range, keep natural look",
-  "restore skin tones (if colorized) with realism, no plastic skin",
-  "keep film grain subtle and realistic",
+  // Сходство лиц
+  "preserve each person's facial identity and features",
+  "do NOT replace faces, do NOT swap faces, do NOT generate different-looking people",
+  "keep original age, gender, ethnicity for each person",
 
-  // --- FRAME / BORDER REMOVAL (THIS IS THE KEY PART) ---
-  "REMOVE any photo border, frame, paper edges, torn edges, white margins, black margins, scanner borders",
-  "do NOT keep the old paper boundary or remaining corners",
-  "extend and reconstruct the image to a clean full-rectangle photo (full frame)",
-  "fill missing outer areas naturally based on the scene, seamless background continuation",
-  "final image must look like a normal complete photo without any leftover frame",
+  // Форма реставрации
+  "fix blur, improve sharpness and fine details carefully",
+  "reduce noise and scratches, remove dust and stains",
+  "recover missing details subtly without changing the scene",
 
-  // --- HARD NEGATIVES ---
-  "NO text, NO watermarks, NO logos, NO UI elements",
-  "NO polaroid style, NO evidence board, NO collage, NO split frame",
-  "NO adding extra people, NO removing people, NO changing identities"
+  // Одежда / позы / руки
+  "keep clothing style and era consistent with the original photo",
+  "do NOT modernize clothing",
+  "keep hands, fingers and limbs consistent with the original",
+
+  // Цвет
+  "if colorizing, use natural realistic skin tones and era-appropriate colors",
+  "avoid oversaturated colors, keep a classic photographic look",
+
+  // Рамка/обрывки
+  "remove paper borders, torn edges and frame artifacts if present",
+  "crop to the actual photo content",
+  "if edges are missing, extend the background and scene naturally without inventing new subjects",
+
+  // Запреты
+  "no text, no captions, no logos, no watermarks",
+  "no dramatic stylization, no fantasy look, keep it photorealistic restoration"
 ].join(", ");
+
+const MODE_PRESETS = {
+  // По умолчанию: безопасная реставрация (без «переизобретения» фото)
+  safe: [
+    "gentle restoration, minimal hallucination",
+    "keep original composition and camera perspective",
+    "keep faces authentic and consistent"
+  ].join(", "),
+
+  // Цветная реставрация (как “оживление”)
+  colorize: [
+    "colorize the photo realistically",
+    "subtle warm natural colors, realistic whites and blacks",
+    "keep the lighting and shadows consistent with the original"
+  ].join(", "),
+
+  // Ч/Б реставрация (если хочешь оставить монохром)
+  bw: [
+    "keep it black and white",
+    "improve tones and contrast, keep classic film look"
+  ].join(", ")
+};
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -55,33 +78,37 @@ export default async function handler(req, res) {
       }
     }
 
-    const { photo, text } = body || {};
-    const userPrompt = (text || "").trim();
+    const { photo, mode, text } = body || {};
 
     if (!photo) {
-      return res.status(400).json({ error: "No photo provided" });
+      return res.status(400).json({ error: "Missing photo" });
     }
 
-    // Итоговый prompt
-    // (userPrompt можно использовать, если хочешь усилить цветизацию/контраст/и т.п.)
-    const prompt = userPrompt
-      ? `${RESTORE_BASE_PROMPT}. ${userPrompt}`
-      : RESTORE_BASE_PROMPT;
+    // mode: "safe" | "colorize" | "bw"
+    const m = (mode || "colorize").toLowerCase();
+    const preset = MODE_PRESETS[m] || MODE_PRESETS.colorize;
+
+    // Доп. пользовательский текст (если вдруг нужно, но по умолчанию пусто)
+    const userPrompt = (text || "").trim();
+
+    const promptParts = [RESTORE_BASE_PROMPT, preset];
+    if (userPrompt) promptParts.push(userPrompt);
+
+    const prompt = promptParts.join(". ").trim();
 
     const input = {
       prompt,
-      output_format: "jpg",
-      input_image: photo
+      input_image: photo,
+      output_format: "jpg"
     };
 
     const replicate = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const output = await replicate.run(
-      "black-forest-labs/flux-kontext-pro",
-      { input }
-    );
+    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
+      input
+    });
 
     let imageUrl = null;
 
@@ -106,7 +133,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      image: imageUrl
+      image: imageUrl,
+      mode: m,
+      prompt_used: undefined // не возвращаем prompt на фронт
     });
   } catch (err) {
     console.error("RESTORE ERROR:", err);
