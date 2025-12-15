@@ -1,7 +1,7 @@
 // assets/js/events.js
 // Подписывает кнопки на нужные действия.
 
-import { els, setLanguage } from "./interface.js";
+import { els, setLanguage, refreshSelectionChips } from "./interface.js";
 import {
   openStyleSheet,
   openSkinSheet,
@@ -17,23 +17,89 @@ import {
   closeAgreementModal,
   handleAgreeConfirm
 } from "./payment.js";
+import { appState, STORAGE_KEYS, UI_TEXT } from "./state.js";
+
+function setMode(mode) {
+  appState.mode = mode;
+
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.MODE, mode);
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Если пользователь выбирает любой “портретный” инструмент — выходим из restore режима,
+// чтобы снова работали oil/anime/poster и т.д.
+function ensurePortraitMode() {
+  if (appState.mode === "restore") {
+    setMode("portrait"); // любое значение, кроме "restore"
+  }
+}
 
 export function attachMainHandlers() {
   if (els.btnStyle) {
-    els.btnStyle.addEventListener("click", () => openStyleSheet());
+    els.btnStyle.addEventListener("click", () => {
+      ensurePortraitMode();
+      openStyleSheet();
+    });
   }
   if (els.btnSkin) {
-    els.btnSkin.addEventListener("click", () => openSkinSheet());
+    els.btnSkin.addEventListener("click", () => {
+      ensurePortraitMode();
+      openSkinSheet();
+    });
   }
   if (els.btnMimic) {
-    els.btnMimic.addEventListener("click", () => openMimicSheet());
+    els.btnMimic.addEventListener("click", () => {
+      ensurePortraitMode();
+      openMimicSheet();
+    });
   }
   if (els.btnGreetings) {
-    els.btnGreetings.addEventListener("click", () => openGreetingSheet());
+    els.btnGreetings.addEventListener("click", () => {
+      ensurePortraitMode();
+      openGreetingSheet();
+    });
   }
+
+  // ✅ RESTORE button
+  const btnRestore = document.getElementById("btnRestore");
+  if (btnRestore) {
+    btnRestore.addEventListener("click", () => {
+      const t = UI_TEXT[appState.language] || UI_TEXT.en;
+
+      const ok = window.confirm(
+        `${t.restoreGuideTitle || "Old Photo Restoration – Tips"}\n\n${
+          t.restoreGuideText ||
+          UI_TEXT.en.restoreGuideText ||
+          "Use this mode for old/damaged photos. It will try to preserve all people and restore scratches/noise. For portrait styles (oil/anime/poster), use PORTRAIT STYLE instead."
+        }`
+      );
+
+      if (!ok) return;
+
+      // включаем режим реставрации
+      setMode("restore");
+
+      // для реставрации эффекты/поздравления/стиль не нужны
+      appState.selectedStyle = null;
+      appState.selectedEffects = [];
+      appState.selectedGreeting = null;
+
+      // обновим чипы (если показываются)
+      try {
+        refreshSelectionChips();
+      } catch (e) {
+        // ignore
+      }
+    });
+  }
+
   if (els.btnGenerate) {
     els.btnGenerate.addEventListener("click", () => handleGenerateClick());
   }
+
   if (els.btnAddPhoto) {
     els.btnAddPhoto.addEventListener("click", () => {
       if (els.fileInput) els.fileInput.click();
