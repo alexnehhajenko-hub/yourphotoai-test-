@@ -24,7 +24,10 @@ export const STORAGE_KEYS = {
   CREDITS_USED: "yourphotoai_creditsUsed",
   GENERATED_IMAGES: "yourphotoai_generatedImages",
   LANGUAGE: "yourphotoai_language",
-  SELECTED_PACK: "yourphotoai_selectedPack"
+  SELECTED_PACK: "yourphotoai_selectedPack",
+
+  // ✅ режим генерации: portrait | restore
+  MODE: "yourphotoai_mode"
 };
 
 // Основные тексты интерфейса (чтобы не лезть в JS каждый раз)
@@ -350,7 +353,10 @@ export const appState = {
   userEmail: "",
   userAgreed: false,
 
-  layer: "home"
+  layer: "home",
+
+  // ✅ по умолчанию обычная генерация портрета
+  mode: "portrait"
 };
 
 export function loadStateFromStorage() {
@@ -358,6 +364,13 @@ export function loadStateFromStorage() {
     const storedLang = window.localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     if (storedLang && SUPPORTED_LANGS.includes(storedLang)) {
       appState.language = storedLang;
+    }
+
+    const storedMode = window.localStorage.getItem(STORAGE_KEYS.MODE);
+    if (storedMode === "restore") {
+      appState.mode = "restore";
+    } else {
+      appState.mode = "portrait";
     }
 
     const storedPaid = window.localStorage.getItem(STORAGE_KEYS.HAS_ACTIVE_PACK);
