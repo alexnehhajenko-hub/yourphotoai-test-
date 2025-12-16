@@ -17,25 +17,32 @@ import {
   closeAgreementModal,
   handleAgreeConfirm
 } from "./payment.js";
-import { appState, STORAGE_KEYS, UI_TEXT } from "./state.js";
+import { appState, UI_TEXT } from "./state.js";
+
+/* =========================
+   MODE MANAGEMENT
+   ========================= */
+
+// Явно задаём режим по умолчанию
+if (!appState.mode) {
+  appState.mode = "portrait";
+}
 
 function setMode(mode) {
   appState.mode = mode;
-
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.MODE, mode);
-  } catch (e) {
-    // ignore
-  }
+  refreshSelectionChips();
 }
 
-// Если пользователь выбирает любой “портретный” инструмент — выходим из restore режима,
-// чтобы снова работали oil/anime/poster и т.д.
+// Любое портретное действие → выходим из restore
 function ensurePortraitMode() {
   if (appState.mode === "restore") {
-    setMode("portrait"); // любое значение, кроме "restore"
+    setMode("portrait");
   }
 }
+
+/* =========================
+   HANDLERS
+   ========================= */
 
 export function attachMainHandlers() {
   if (els.btnStyle) {
@@ -44,18 +51,21 @@ export function attachMainHandlers() {
       openStyleSheet();
     });
   }
+
   if (els.btnSkin) {
     els.btnSkin.addEventListener("click", () => {
       ensurePortraitMode();
       openSkinSheet();
     });
   }
+
   if (els.btnMimic) {
     els.btnMimic.addEventListener("click", () => {
       ensurePortraitMode();
       openMimicSheet();
     });
   }
+
   if (els.btnGreetings) {
     els.btnGreetings.addEventListener("click", () => {
       ensurePortraitMode();
@@ -63,36 +73,29 @@ export function attachMainHandlers() {
     });
   }
 
-  // ✅ RESTORE button
+  // ✅ RESTORE BUTTON
   const btnRestore = document.getElementById("btnRestore");
   if (btnRestore) {
     btnRestore.addEventListener("click", () => {
       const t = UI_TEXT[appState.language] || UI_TEXT.en;
 
       const ok = window.confirm(
-        `${t.restoreGuideTitle || "Old Photo Restoration – Tips"}\n\n${
-          t.restoreGuideText ||
-          UI_TEXT.en.restoreGuideText ||
-          "Use this mode for old/damaged photos. It will try to preserve all people and restore scratches/noise. For portrait styles (oil/anime/poster), use PORTRAIT STYLE instead."
-        }`
+        "Old Photo Restoration\n\n" +
+        "• Use for OLD or damaged photos\n" +
+        "• Preserves all people and faces\n" +
+        "• Removes scratches & noise\n\n" +
+        "For oil/anime/poster styles use PORTRAIT STYLE."
       );
 
       if (!ok) return;
 
-      // включаем режим реставрации
       setMode("restore");
 
-      // для реставрации эффекты/поздравления/стиль не нужны
       appState.selectedStyle = null;
       appState.selectedEffects = [];
       appState.selectedGreeting = null;
 
-      // обновим чипы (если показываются)
-      try {
-        refreshSelectionChips();
-      } catch (e) {
-        // ignore
-      }
+      refreshSelectionChips();
     });
   }
 
@@ -105,6 +108,7 @@ export function attachMainHandlers() {
       if (els.fileInput) els.fileInput.click();
     });
   }
+
   if (els.fileInput) {
     els.fileInput.addEventListener("change", handleFileSelected);
   }
@@ -152,17 +156,9 @@ export function attachMainHandlers() {
     });
   }
 
-  // Переключение языков, если кнопки есть в верстке
-  if (els.btnLangEn) {
-    els.btnLangEn.addEventListener("click", () => setLanguage("en"));
-  }
-  if (els.btnLangDe) {
-    els.btnLangDe.addEventListener("click", () => setLanguage("de"));
-  }
-  if (els.btnLangEs) {
-    els.btnLangEs.addEventListener("click", () => setLanguage("es"));
-  }
-  if (els.btnLangRu) {
-    els.btnLangRu.addEventListener("click", () => setLanguage("ru"));
-  }
+  // Языки
+  if (els.btnLangEn) els.btnLangEn.addEventListener("click", () => setLanguage("en"));
+  if (els.btnLangDe) els.btnLangDe.addEventListener("click", () => setLanguage("de"));
+  if (els.btnLangEs) els.btnLangEs.addEventListener("click", () => setLanguage("es"));
+  if (els.btnLangRu) els.btnLangRu.addEventListener("click", () => setLanguage("ru"));
 }
