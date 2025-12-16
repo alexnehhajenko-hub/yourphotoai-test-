@@ -35,6 +35,9 @@ export function bindElements() {
   els.btnAddPhoto = document.getElementById("btnAddPhoto");
   els.btnPay = document.getElementById("btnPay");
 
+  // ✅ restore button
+  els.btnRestore = document.getElementById("btnRestore");
+
   els.btnLangEn = document.getElementById("langEn");
   els.btnLangDe = document.getElementById("langDe");
   els.btnLangEs = document.getElementById("langEs");
@@ -71,9 +74,7 @@ export function bindElements() {
   els.agreePayBtn = document.getElementById("agreePayBtn");
   els.agreementTitle = document.querySelector(".agreement-title");
   els.agreementText = document.querySelector(".agreement-text");
-  els.agreementEmailTitle = document.querySelector(
-    ".agreement-section-title"
-  );
+  els.agreementEmailTitle = document.querySelector(".agreement-section-title");
   els.agreementCheckboxLabel = document.querySelector(
     ".agreement-checkbox-row span"
   );
@@ -118,9 +119,7 @@ export function setLanguage(lang) {
     els.previewLabel.textContent = t.previewLabel;
   }
   if (els.previewPlaceholder) {
-    els.previewPlaceholder.innerHTML = t.previewPlaceholder
-      .split("\n")
-      .join("<br>");
+    els.previewPlaceholder.innerHTML = t.previewPlaceholder.split("\n").join("<br>");
   }
 
   if (els.generateStatusText) {
@@ -168,9 +167,7 @@ export function setLanguage(lang) {
 
   if (els.agreementTitle) els.agreementTitle.textContent = t.agreementTitle;
   if (els.agreementText) {
-    els.agreementText.innerHTML = t.agreementText
-      .split("\n")
-      .join("<br><br>");
+    els.agreementText.innerHTML = t.agreementText.split("\n").join("<br><br>");
   }
   if (els.agreementEmailTitle) {
     els.agreementEmailTitle.textContent = t.agreementEmailTitle;
@@ -196,12 +193,7 @@ export function setLanguage(lang) {
     setupSupportEmail();
   }
 
-  const allButtons = [
-    els.btnLangEn,
-    els.btnLangDe,
-    els.btnLangEs,
-    els.btnLangRu
-  ];
+  const allButtons = [els.btnLangEn, els.btnLangDe, els.btnLangEs, els.btnLangRu];
   allButtons.forEach((b) => {
     if (!b) return;
     b.classList.remove("lang-selected");
@@ -296,8 +288,7 @@ export function refreshSelectionChips() {
   }
 
   if (appState.selectedStyle) {
-    const name =
-      STYLE_LABELS_EN[appState.selectedStyle] || appState.selectedStyle;
+    const name = STYLE_LABELS_EN[appState.selectedStyle] || appState.selectedStyle;
     addChip(`Style: ${name}`);
   }
 
@@ -329,6 +320,13 @@ export function refreshSelectionChips() {
     addChip("Paid: package active");
   } else {
     addChip("No paid package yet");
+  }
+
+  // ✅ показываем режим для диагностики
+  if (appState.mode === "restore") {
+    addChip("Mode: RESTORE");
+  } else {
+    addChip("Mode: PORTRAIT");
   }
 }
 
