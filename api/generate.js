@@ -1,131 +1,323 @@
-// api/restore.js
-// Photo Restoration (Replicate / FLUX-Kontext-Pro)
-// Goal: clean & restore OLD / damaged / scanned photos WITHOUT changing faces/identity.
-// Works for group photos: preserve every person, no face swaps, no "beautifying" into someone else.
+// assets/js/generation.js
+// Загрузка фото, вызов /api/generate или /api/restore, учёт демо/пакетов, отправка email.
 
-import Replicate from "replicate";
+import {
+  appState,
+  DEMO_MODE,
+  DEMO_SESSION_LIMIT,
+  STORAGE_KEYS,
+  UI_TEXT,
+  PACK_SIZES
+} from "./state.js";
+import {
+  els,
+  refreshSelectionChips,
+  setLayer,
+  updateGreetingOverlay
+} from "./interface.js";
+import { openAgreementModal, openPayModal } from "./payment.js";
 
-const RESTORE_BASE_PROMPT = [
-  "photo restoration and cleanup of the input image",
-  "preserve the original composition EXACTLY: same people, same positions, same camera angle",
-  "IDENTITY LOCK: do not change any person's face or identity",
-  "for group photos: preserve EVERY face, do NOT replace faces, do NOT merge people, do NOT remove people",
-  "do not invent new facial features, do not make faces younger or different",
-  "restore damaged areas conservatively: remove dust, scratches, creases, stains, blotches",
-  "reduce noise and grain carefully, keep a natural photo texture",
-  "improve clarity and contrast slightly, keep it realistic",
-  "repair faded areas and uneven exposure, keep original lighting feel",
-  "no beauty retouch, no makeup, no plastic skin",
-  "no text, no logos, no watermarks, no UI overlays"
-].join(", ");
+export function handleFileSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
 
-const RESTORE_COLOR_PROMPT = [
-  "if the photo is black and white, keep it black and white by default",
-  "do NOT colorize unless explicitly asked by the user"
-].join(", ");
+  appState.originalFile = file;
 
-const OPTIONAL_COLORIZE_PROMPT = [
-  "careful photo colorization (only if requested)",
-  "natural skin tones, realistic clothes colors, keep it subtle and historically plausible",
-  "do not alter faces or identities while colorizing"
-].join(", ");
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const resizedDataUrl = resizeImageToMax(img, 1024);
+      appState.photoBase64 = resizedDataUrl;
 
-const OPTIONAL_ENHANCE_PROMPT = [
-  "slightly improve sharpness in a natural way",
-  "restore small missing details conservatively (do not hallucinate new objects)",
-  "keep edges and textures realistic"
-].join(", ");
+      if (els.previewImage) {
+        els.previewImage.src = resizedDataUrl;
+        els.previewImage.style.display = "block";
+      }
+      if (els.previewPlaceholder) {
+        els.previewPlaceholder.style.display = "none";
+      }
+      if (els.downloadLink) {
+        els.downloadLink.style.display = "none";
+      }
+      updateGreetingOverlay();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
-function pickImageUrl(output) {
-  let imageUrl = null;
+function resizeImageToMax(img, maxSize) {
+  const canvas = document.createElement("canvas");
+  let { width, height } = img;
 
-  if (Array.isArray(output)) {
-    imageUrl = output[0];
-  } else if (output?.output) {
-    if (Array.isArray(output.output)) imageUrl = output.output[0];
-    else if (typeof output.output === "string") imageUrl = output.output;
-  } else if (typeof output === "string") {
-    imageUrl = output;
-  } else if (output?.url) {
-    try {
-      imageUrl = output.url();
-    } catch {
-      // ignore
+  if (width > height && width > maxSize) {
+    height = Math.round((height * maxSize) / width);
+    width = maxSize;
+  } else if (height >= width && height > maxSize) {
+    width = Math.round((width * maxSize) / height);
+    height = maxSize;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+function setMode(mode) {
+  appState.mode = mode;
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.MODE, mode);
+  } catch (e) {
+    // ignore
+  }
+}
+
+export async function handleGenerateClick() {
+  if (appState.isGenerating) return;
+
+  const t = UI_TEXT[appState.language] || UI_TEXT.en;
+
+  if (!appState.photoBase64) {
+    alert(t.alertAddPhoto || "Please add a photo first.");
+    return;
+  }
+
+  // Проверяем демо / оплату
+  if (DEMO_MODE) {
+    if (!appState.userEmail || !appState.userAgreed) {
+      openAgreementModal();
+      return;
+    }
+    if (
+      appState.creditsTotal > 0 &&
+      appState.creditsUsed >= appState.creditsTotal
+    ) {
+      alert(t.alertDemoFinished || UI_TEXT.en.alertDemoFinished);
+      return;
+    }
+  } else {
+    if (!appState.hasActivePack) {
+      alert(t.alertNoActivePack || UI_TEXT.en.alertNoActivePack);
+      openPayModal();
+      return;
+    }
+    if (
+      appState.creditsTotal > 0 &&
+      appState.creditsUsed >= appState.creditsTotal
+    ) {
+      alert(t.alertPaidFinished || UI_TEXT.en.alertPaidFinished);
+      return;
     }
   }
 
-  return imageUrl;
-}
-
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+  appState.isGenerating = true;
+  showGenerating(true);
 
   try {
-    let body = req.body;
-    if (typeof body === "string") {
+    // ✅ если выбран стиль/эффекты/поздравление — это ТОЧНО портрет, даже если mode случайно restore
+    const wantsPortrait =
+      Boolean(appState.selectedStyle) ||
+      (Array.isArray(appState.selectedEffects) && appState.selectedEffects.length > 0) ||
+      Boolean(appState.selectedGreeting);
+
+    const isRestore = appState.mode === "restore" && !wantsPortrait;
+
+    const payload = isRestore
+      ? {
+          photo: appState.photoBase64,
+          language: appState.language || "en"
+        }
+      : {
+          style: appState.selectedStyle || "beauty",
+          text: "",
+          photo: appState.photoBase64,
+          effects: appState.selectedEffects,
+          greeting: appState.selectedGreeting || null,
+          language: appState.language || "en"
+        };
+
+    const endpoint = isRestore ? "/api/restore" : "/api/generate";
+
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) {
+      throw new Error("Generation server error");
+    }
+
+    const data = await resp.json();
+    if (!data || !data.image) {
+      throw new Error("No image URL in response");
+    }
+
+    // Показываем результат
+    showResultPortrait(data.image);
+    // Учитываем генерацию (кредиты, список картинок)
+    registerGeneration(data.image);
+
+    // ✅ после успешной реставрации — возвращаемся в portrait, чтобы “масло” не ломалось
+    if (isRestore) {
+      setMode("portrait");
       try {
-        body = JSON.parse(body);
-      } catch {
-        body = {};
+        refreshSelectionChips();
+      } catch (e) {
+        // ignore
       }
     }
 
-    const { photo, text, options } = body || {};
-    if (!photo) return res.status(400).json({ error: "Missing photo" });
-
-    // options: { colorize?: boolean, enhance?: boolean }
-    const colorize = Boolean(options?.colorize);
-    const enhance = Boolean(options?.enhance);
-
-    const userPrompt = (text || "").trim();
-
-    const promptParts = [RESTORE_BASE_PROMPT, RESTORE_COLOR_PROMPT];
-
-    if (enhance) promptParts.push(OPTIONAL_ENHANCE_PROMPT);
-    if (colorize) promptParts.push(OPTIONAL_COLORIZE_PROMPT);
-
-    // userPrompt allowed, but we still protect identity strongly
-    if (userPrompt) {
-      promptParts.push(
-        [
-          "User notes (follow ONLY if it does not change identity/faces):",
-          userPrompt
-        ].join(" ")
-      );
-    }
-
-    const prompt = promptParts.join(". ").trim();
-
-    const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN
-    });
-
-    const input = {
-      prompt,
-      input_image: photo,
-      output_format: "jpg"
-    };
-
-    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
-      input
-    });
-
-    const imageUrl = pickImageUrl(output);
-    if (!imageUrl) {
-      return res.status(500).json({ error: "No image URL returned" });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      image: imageUrl
-    });
+    // Сброс эффектов/поздравления после успешной генерации
+    clearEffectsSelection();
   } catch (err) {
-    console.error("RESTORE ERROR:", err);
-    return res.status(500).json({
-      error: "Restore failed",
-      details: err?.message || String(err)
-    });
+    console.error("GENERATION ERROR:", err);
+    alert(t.alertGenerationFailed || UI_TEXT.en.alertGenerationFailed);
+  } finally {
+    showGenerating(false);
+    appState.isGenerating = false;
   }
+}
+
+export function showGenerating(isOn) {
+  if (!els.generateStatus) return;
+  els.generateStatus.style.display = isOn ? "flex" : "none";
+}
+
+export function showResultPortrait(url) {
+  if (els.previewImage) {
+    els.previewImage.src = url;
+    els.previewImage.style.display = "block";
+  }
+  if (els.previewPlaceholder) {
+    els.previewPlaceholder.style.display = "none";
+  }
+
+  if (els.downloadLink) {
+    els.downloadLink.href = url;
+    els.downloadLink.style.display = "inline-flex";
+  }
+
+  updateGreetingOverlay();
+  document.body.classList.add("result-mode");
+  setLayer("result", true);
+}
+
+export function exitResultView(pushHistory = true) {
+  document.body.classList.remove("result-mode");
+  if (pushHistory) setLayer("home", true);
+}
+
+function registerGeneration(imageUrl) {
+  if (appState.creditsTotal <= 0) {
+    if (DEMO_MODE) {
+      appState.creditsTotal = DEMO_SESSION_LIMIT;
+    } else if (appState.selectedPack && PACK_SIZES[appState.selectedPack]) {
+      appState.creditsTotal = PACK_SIZES[appState.selectedPack];
+    }
+  }
+
+  appState.creditsUsed += 1;
+
+  if (!appState.generatedImages.includes(imageUrl)) {
+    appState.generatedImages.push(imageUrl);
+  }
+
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEYS.CREDITS_TOTAL,
+      String(appState.creditsTotal)
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.CREDITS_USED,
+      String(appState.creditsUsed)
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.GENERATED_IMAGES,
+      JSON.stringify(appState.generatedImages)
+    );
+  } catch (e) {
+    console.warn("Cannot store credits/images", e);
+  }
+
+  refreshSelectionChips();
+
+  if (DEMO_MODE && appState.creditsUsed >= appState.creditsTotal) {
+    finishSessionAndSendEmail();
+  }
+}
+
+function clearEffectsSelection() {
+  appState.selectedEffects = [];
+  appState.selectedGreeting = null;
+
+  refreshSelectionChips();
+  updateGreetingOverlay();
+}
+
+async function finishSessionAndSendEmail() {
+  const t = UI_TEXT[appState.language] || UI_TEXT.en;
+
+  const email = appState.userEmail;
+  if (!email) {
+    alert("Email not found. Cannot send portraits.");
+    return;
+  }
+
+  if (!appState.generatedImages || appState.generatedImages.length === 0) {
+    alert("No generated portraits to send.");
+    return;
+  }
+
+  try {
+    const resp = await fetch("/api/send-portraits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        images: appState.generatedImages,
+        total: appState.creditsTotal,
+        used: appState.creditsUsed
+      })
+    });
+
+    if (!resp.ok) {
+      throw new Error("Email server error");
+    }
+
+    const data = await resp.json();
+    if (!data || !data.ok) {
+      throw new Error("Email service did not confirm sending.");
+    }
+
+    alert(
+      `Session finished. We sent ${appState.generatedImages.length} portrait(s) to ${email}.`
+    );
+
+    resetDemoSession();
+  } catch (err) {
+    console.error("SEND EMAIL ERROR:", err);
+    alert(
+      "Portraits have been generated, but email could not be sent. Please try later."
+    );
+  }
+}
+
+function resetDemoSession() {
+  appState.creditsTotal = 0;
+  appState.creditsUsed = 0;
+  appState.generatedImages = [];
+
+  try {
+    window.localStorage.removeItem(STORAGE_KEYS.CREDITS_TOTAL);
+    window.localStorage.removeItem(STORAGE_KEYS.CREDITS_USED);
+    window.localStorage.removeItem(STORAGE_KEYS.GENERATED_IMAGES);
+  } catch (e) {
+    console.warn("Cannot clear demo session storage", e);
+  }
+
+  refreshSelectionChips();
 }
