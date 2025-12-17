@@ -26,7 +26,7 @@ export const STORAGE_KEYS = {
   LANGUAGE: "yourphotoai_language",
   SELECTED_PACK: "yourphotoai_selectedPack",
 
-  // ✅ режим генерации: portrait | restore
+  // ✅ режим генерации: "portrait" | "restore"
   MODE: "yourphotoai_mode"
 };
 
@@ -223,30 +223,10 @@ export const UI_TEXT = {
 };
 
 export const GREETING_LABELS = {
-  en: {
-    "new-year": "New Year 🎄",
-    birthday: "Birthday 🎂",
-    funny: "Funny 😜",
-    scary: "Scary 👻"
-  },
-  de: {
-    "new-year": "Neujahr 🎄",
-    birthday: "Geburtstag 🎂",
-    funny: "Witzig 😜",
-    scary: "Gruselig 👻"
-  },
-  es: {
-    "new-year": "Año Nuevo 🎄",
-    birthday: "Cumpleaños 🎂",
-    funny: "Divertido 😜",
-    scary: "Terrorífico 👻"
-  },
-  ru: {
-    "new-year": "Новый год 🎄",
-    birthday: "День рождения 🎂",
-    funny: "Смешное 😜",
-    scary: "Страшное 👻"
-  }
+  en: { "new-year": "New Year 🎄", birthday: "Birthday 🎂", funny: "Funny 😜", scary: "Scary 👻" },
+  de: { "new-year": "Neujahr 🎄", birthday: "Geburtstag 🎂", funny: "Witzig 😜", scary: "Gruselig 👻" },
+  es: { "new-year": "Año Nuevo 🎄", birthday: "Cumpleaños 🎂", funny: "Divertido 😜", scary: "Terrorífico 👻" },
+  ru: { "new-year": "Новый год 🎄", birthday: "День рождения 🎂", funny: "Смешное 😜", scary: "Страшное 👻" }
 };
 
 export const GREETING_TEXT = {
@@ -290,8 +270,7 @@ export const SHEET_TEXT = {
     mimicTitle: "Expression",
     mimicDescription: "Choose the facial expression.",
     greetingTitle: "Greetings",
-    greetingDescription:
-      "We will gently add festive atmosphere to the portrait."
+    greetingDescription: "We will gently add festive atmosphere to the portrait."
   },
   de: {
     styleTitle: "Porträtstil",
@@ -301,8 +280,7 @@ export const SHEET_TEXT = {
     mimicTitle: "Mimik",
     mimicDescription: "Wähle den Gesichtsausdruck.",
     greetingTitle: "Grußkarten",
-    greetingDescription:
-      "Wir fügen dem Porträt vorsichtig eine festliche Atmosphäre hinzu."
+    greetingDescription: "Wir fügen dem Porträt vorsichtig eine festliche Atmosphäre hinzu."
   },
   es: {
     styleTitle: "Estilo de retrato",
@@ -312,8 +290,7 @@ export const SHEET_TEXT = {
     mimicTitle: "Expresión",
     mimicDescription: "Elige la expresión facial.",
     greetingTitle: "Felicitaciones",
-    greetingDescription:
-      "Añadiremos suavemente un ambiente festivo al retrato."
+    greetingDescription: "Añadiremos suavemente un ambiente festivo al retrato."
   },
   ru: {
     styleTitle: "Стиль портрета",
@@ -323,13 +300,15 @@ export const SHEET_TEXT = {
     mimicTitle: "Мимика",
     mimicDescription: "Выберите выражение лица.",
     greetingTitle: "Поздравления",
-    greetingDescription:
-      "Мы аккуратно добавим праздничный антураж к портрету."
+    greetingDescription: "Мы аккуратно добавим праздничный антураж к портрету."
   }
 };
 
 // Глобальное состояние
 export const appState = {
+  // ✅ "portrait" | "restore"
+  mode: "portrait",
+
   selectedStyle: null,
   selectedEffects: [],
   selectedGreeting: null,
@@ -353,10 +332,7 @@ export const appState = {
   userEmail: "",
   userAgreed: false,
 
-  layer: "home",
-
-  // ✅ по умолчанию обычная генерация портрета
-  mode: "portrait"
+  layer: "home"
 };
 
 export function loadStateFromStorage() {
@@ -366,9 +342,10 @@ export function loadStateFromStorage() {
       appState.language = storedLang;
     }
 
+    // ✅ restore/portrait mode
     const storedMode = window.localStorage.getItem(STORAGE_KEYS.MODE);
-    if (storedMode === "restore") {
-      appState.mode = "restore";
+    if (storedMode === "restore" || storedMode === "portrait") {
+      appState.mode = storedMode;
     } else {
       appState.mode = "portrait";
     }
@@ -399,9 +376,7 @@ export function loadStateFromStorage() {
     if (!Number.isNaN(storedTotal)) appState.creditsTotal = storedTotal;
     if (!Number.isNaN(storedUsed)) appState.creditsUsed = storedUsed;
 
-    const storedImages = window.localStorage.getItem(
-      STORAGE_KEYS.GENERATED_IMAGES
-    );
+    const storedImages = window.localStorage.getItem(STORAGE_KEYS.GENERATED_IMAGES);
     if (storedImages) {
       try {
         const arr = JSON.parse(storedImages);
