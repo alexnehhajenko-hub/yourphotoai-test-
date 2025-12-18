@@ -1,7 +1,7 @@
 // assets/js/events.js
 // Подписывает кнопки на нужные действия.
 
-import { els, setLanguage, refreshSelectionChips } from "./interface.js";
+import { els, setLanguage } from "./interface.js";
 import {
   openStyleSheet,
   openSkinSheet,
@@ -17,79 +17,23 @@ import {
   closeAgreementModal,
   handleAgreeConfirm
 } from "./payment.js";
-import { appState, STORAGE_KEYS, UI_TEXT } from "./state.js";
-
-function setMode(mode) {
-  appState.mode = mode;
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.MODE, mode);
-  } catch (e) {
-    // ignore
-  }
-}
-
-// Если пользователь выбирает портретные инструменты — автоматически выключаем restore.
-function ensurePortraitMode() {
-  if (appState.mode === "restore") {
-    setMode("portrait");
-  }
-}
 
 export function attachMainHandlers() {
   if (els.btnStyle) {
-    els.btnStyle.addEventListener("click", () => {
-      ensurePortraitMode();
-      openStyleSheet();
-    });
+    els.btnStyle.addEventListener("click", () => openStyleSheet());
   }
   if (els.btnSkin) {
-    els.btnSkin.addEventListener("click", () => {
-      ensurePortraitMode();
-      openSkinSheet();
-    });
+    els.btnSkin.addEventListener("click", () => openSkinSheet());
   }
   if (els.btnMimic) {
-    els.btnMimic.addEventListener("click", () => {
-      ensurePortraitMode();
-      openMimicSheet();
-    });
+    els.btnMimic.addEventListener("click", () => openMimicSheet());
   }
   if (els.btnGreetings) {
-    els.btnGreetings.addEventListener("click", () => {
-      ensurePortraitMode();
-      openGreetingSheet();
-    });
+    els.btnGreetings.addEventListener("click", () => openGreetingSheet());
   }
-
-  // ✅ RESTORE button
-  if (els.btnRestore) {
-    els.btnRestore.addEventListener("click", () => {
-      const t = UI_TEXT[appState.language] || UI_TEXT.en;
-
-      const ok = window.confirm(
-        `${t.restoreGuideTitle || "Old Photo Restoration – Tips"}\n\n${
-          t.restoreGuideText ||
-          (UI_TEXT.en && UI_TEXT.en.restoreGuideText) ||
-          "Use this mode for old/damaged photos."
-        }`
-      );
-      if (!ok) return;
-
-      setMode("restore");
-
-      // в restore режиме не нужны портретные параметры
-      appState.selectedStyle = null;
-      appState.selectedEffects = [];
-      appState.selectedGreeting = null;
-
-      refreshSelectionChips();
-    });
-  }
-
   if (els.btnGenerate) {
     els.btnGenerate.addEventListener("click", () => handleGenerateClick());
   }
-
   if (els.btnAddPhoto) {
     els.btnAddPhoto.addEventListener("click", () => {
       if (els.fileInput) els.fileInput.click();
@@ -119,7 +63,9 @@ export function attachMainHandlers() {
   }
 
   if (els.agreementCloseBtn) {
-    els.agreementCloseBtn.addEventListener("click", () => closeAgreementModal());
+    els.agreementCloseBtn.addEventListener("click", () =>
+      closeAgreementModal()
+    );
   }
   if (els.agreePayBtn) {
     els.agreePayBtn.addEventListener("click", () => handleAgreeConfirm());
@@ -134,12 +80,23 @@ export function attachMainHandlers() {
 
   if (els.downloadLink) {
     els.downloadLink.addEventListener("click", (e) => {
-      if (!els.previewImage || !els.previewImage.src) e.preventDefault();
+      if (!els.previewImage || !els.previewImage.src) {
+        e.preventDefault();
+      }
     });
   }
 
-  if (els.btnLangEn) els.btnLangEn.addEventListener("click", () => setLanguage("en"));
-  if (els.btnLangDe) els.btnLangDe.addEventListener("click", () => setLanguage("de"));
-  if (els.btnLangEs) els.btnLangEs.addEventListener("click", () => setLanguage("es"));
-  if (els.btnLangRu) els.btnLangRu.addEventListener("click", () => setLanguage("ru"));
+  // Переключение языков, если кнопки есть в верстке
+  if (els.btnLangEn) {
+    els.btnLangEn.addEventListener("click", () => setLanguage("en"));
+  }
+  if (els.btnLangDe) {
+    els.btnLangDe.addEventListener("click", () => setLanguage("de"));
+  }
+  if (els.btnLangEs) {
+    els.btnLangEs.addEventListener("click", () => setLanguage("es"));
+  }
+  if (els.btnLangRu) {
+    els.btnLangRu.addEventListener("click", () => setLanguage("ru"));
+  }
 }
