@@ -14,8 +14,6 @@ export const PACK_SIZES = {
   pack30: 30
 };
 
-// ⚠️ Пока оставляю RU в списке, чтобы сайт не ломался из-за кнопки RU в index.html.
-// Когда ты уберёшь кнопку RU из HTML — поменяем на ["en","de","es","fr"] как ты хочешь.
 export const SUPPORTED_LANGS = ["en", "de", "es", "ru"];
 
 export const STORAGE_KEYS = {
@@ -26,13 +24,10 @@ export const STORAGE_KEYS = {
   CREDITS_USED: "yourphotoai_creditsUsed",
   GENERATED_IMAGES: "yourphotoai_generatedImages",
   LANGUAGE: "yourphotoai_language",
-  SELECTED_PACK: "yourphotoai_selectedPack",
-
-  // ✅ режим генерации: "portrait" | "restore"
-  MODE: "yourphotoai_mode"
+  SELECTED_PACK: "yourphotoai_selectedPack"
 };
 
-// Основные тексты интерфейса
+// Основные тексты интерфейса (чтобы не лезть в JS каждый раз)
 export const UI_TEXT = {
   en: {
     subtitle: "Create your unique AI portrait",
@@ -48,7 +43,6 @@ export const UI_TEXT = {
     btnGenerate: "GENERATE",
     btnAddPhoto: "ADD PHOTO",
     btnPay: "PACKAGES",
-    btnRestore: "RESTORE (OLD PHOTO)",
 
     sheetOptionsTitle: "Options",
     sheetCategoryTitle: "Categories",
@@ -95,14 +89,8 @@ export const UI_TEXT = {
     alertAgreeMissing: "Please confirm age and consent.",
 
     paymentSuccess:
-      "Payment completed! 🎉 You can now generate portraits with your package.",
-
-    restoreGuideTitle: "Old Photo Restoration – Tips",
-    restoreGuideText:
-      "Use this mode for old/damaged photos. It will preserve all people and remove scratches/noise.\n\n" +
-      "For Oil / Anime / Poster styles — use PORTRAIT STYLE (it will switch back automatically)."
+      "Payment completed! 🎉 You can now generate portraits with your package."
   },
-
   de: {
     subtitle: "Erstelle dein einzigartiges KI-Porträt",
     previewLabel: "VORSCHAU",
@@ -117,7 +105,6 @@ export const UI_TEXT = {
     btnGenerate: "GENERIEREN",
     btnAddPhoto: "FOTO HINZUFÜGEN",
     btnPay: "PAKETE",
-    btnRestore: "RESTAURIEREN (ALTES FOTO)",
 
     sheetOptionsTitle: "Optionen",
     sheetCategoryTitle: "Kategorien",
@@ -146,7 +133,6 @@ export const UI_TEXT = {
     download: "Porträt herunterladen",
     supportLabel: "Support:"
   },
-
   es: {
     subtitle: "Crea tu retrato único con IA",
     previewLabel: "VISTA PREVIA",
@@ -161,7 +147,6 @@ export const UI_TEXT = {
     btnGenerate: "GENERAR",
     btnAddPhoto: "AÑADIR FOTO",
     btnPay: "PAQUETES",
-    btnRestore: "RESTAURAR (FOTO ANTIGUA)",
 
     sheetOptionsTitle: "Opciones",
     sheetCategoryTitle: "Categorías",
@@ -190,7 +175,6 @@ export const UI_TEXT = {
     download: "Descargar retrato",
     supportLabel: "Soporte:"
   },
-
   ru: {
     subtitle: "Создайте свой уникальный AI-портрет",
     previewLabel: "ПРЕДПРОСМОТР",
@@ -205,7 +189,6 @@ export const UI_TEXT = {
     btnGenerate: "ГЕНЕРИРОВАТЬ",
     btnAddPhoto: "ДОБАВИТЬ ФОТО",
     btnPay: "ПАКЕТЫ",
-    btnRestore: "РЕСТАВРАЦИЯ (СТАРОЕ ФОТО)",
 
     sheetOptionsTitle: "Варианты",
     sheetCategoryTitle: "Категории",
@@ -232,12 +215,7 @@ export const UI_TEXT = {
       "Оплата обрабатывается через Stripe. Мы не видим и не храним данные вашей карты.",
 
     download: "Скачать портрет",
-    supportLabel: "Поддержка:",
-
-    restoreGuideTitle: "Реставрация старых фото — подсказка",
-    restoreGuideText:
-      "Используй этот режим только для старых/повреждённых фото. Он сохранит всех людей и уберёт шум/царапины.\n\n" +
-      "Для Oil/Anime/Poster используй «СТИЛЬ ПОРТРЕТА» — режим вернётся автоматически."
+    supportLabel: "Поддержка:"
   }
 };
 
@@ -259,3 +237,174 @@ export const GREETING_LABELS = {
     birthday: "Cumpleaños 🎂",
     funny: "Divertido 😜",
     scary: "Terrorífico 👻"
+  },
+  ru: {
+    "new-year": "Новый год 🎄",
+    birthday: "День рождения 🎂",
+    funny: "Смешное 😜",
+    scary: "Страшное 👻"
+  }
+};
+
+export const GREETING_TEXT = {
+  "new-year": "Happy New Year!",
+  birthday: "Happy Birthday!",
+  funny: "You are AI-level awesome!",
+  scary: "Your AI twin is watching you..."
+};
+
+export const STYLE_LABELS_EN = {
+  beauty: "Beauty",
+  oil: "Oil painting",
+  anime: "Anime",
+  poster: "Poster",
+  classic: "Classic portrait"
+};
+
+export const EFFECT_CHIP_LABELS_EN = {
+  "no-wrinkles": "Effect: no wrinkles",
+  younger: "Effect: younger",
+  "smooth-skin": "Effect: smooth skin",
+  "glow-golden": "Effect: golden glow",
+  "cinematic-light": "Effect: cinematic light",
+  "smile-soft": "Expression: soft smile",
+  "smile-big": "Expression: big smile",
+  "smile-hollywood": "Expression: Hollywood smile",
+  laugh: "Expression: laugh",
+  "surprised-wow": "Expression: wow-surprised",
+  neutral: "Expression: neutral",
+  serious: "Expression: serious look",
+  "eyes-bigger": "Expression: bigger eyes",
+  "eyes-brighter": "Expression: brighter eyes"
+};
+
+export const SHEET_TEXT = {
+  en: {
+    styleTitle: "Portrait style",
+    styleDescription: "Choose the main artistic style.",
+    skinTitle: "Skin effect",
+    skinDescription: "Choose an effect that gives a wow feeling.",
+    mimicTitle: "Expression",
+    mimicDescription: "Choose the facial expression.",
+    greetingTitle: "Greetings",
+    greetingDescription:
+      "We will gently add festive atmosphere to the portrait."
+  },
+  de: {
+    styleTitle: "Porträtstil",
+    styleDescription: "Wähle den künstlerischen Stil.",
+    skinTitle: "Hauteffekt",
+    skinDescription: "Wähle einen Effekt mit Wow-Effekt.",
+    mimicTitle: "Mimik",
+    mimicDescription: "Wähle den Gesichtsausdruck.",
+    greetingTitle: "Grußkarten",
+    greetingDescription:
+      "Wir fügen dem Porträt vorsichtig eine festliche Atmosphäre hinzu."
+  },
+  es: {
+    styleTitle: "Estilo de retrato",
+    styleDescription: "Elige el estilo artístico principal.",
+    skinTitle: "Efecto de piel",
+    skinDescription: "Elige un efecto con efecto wow.",
+    mimicTitle: "Expresión",
+    mimicDescription: "Elige la expresión facial.",
+    greetingTitle: "Felicitaciones",
+    greetingDescription:
+      "Añadiremos suavemente un ambiente festivo al retrato."
+  },
+  ru: {
+    styleTitle: "Стиль портрета",
+    styleDescription: "Выберите основной художественный стиль.",
+    skinTitle: "Эффект кожи",
+    skinDescription: "Выберите эффект, который даст вау-ощущение.",
+    mimicTitle: "Мимика",
+    mimicDescription: "Выберите выражение лица.",
+    greetingTitle: "Поздравления",
+    greetingDescription:
+      "Мы аккуратно добавим праздничный антураж к портрету."
+  }
+};
+
+// Глобальное состояние
+export const appState = {
+  selectedStyle: null,
+  selectedEffects: [],
+  selectedGreeting: null,
+
+  language: "en",
+
+  originalFile: null,
+  photoBase64: null,
+
+  selectedPack: null,
+
+  isGenerating: false,
+  isPaying: false,
+
+  hasActivePack: false,
+
+  creditsTotal: 0,
+  creditsUsed: 0,
+  generatedImages: [],
+
+  userEmail: "",
+  userAgreed: false,
+
+  layer: "home"
+};
+
+export function loadStateFromStorage() {
+  try {
+    const storedLang = window.localStorage.getItem(STORAGE_KEYS.LANGUAGE);
+    if (storedLang && SUPPORTED_LANGS.includes(storedLang)) {
+      appState.language = storedLang;
+    }
+
+    const storedPaid = window.localStorage.getItem(STORAGE_KEYS.HAS_ACTIVE_PACK);
+    if (storedPaid === "1") {
+      appState.hasActivePack = true;
+    }
+
+    const storedEmail = window.localStorage.getItem(STORAGE_KEYS.USER_EMAIL);
+    if (storedEmail) {
+      appState.userEmail = storedEmail;
+    }
+
+    const storedAgreed = window.localStorage.getItem(STORAGE_KEYS.USER_AGREED);
+    if (storedAgreed === "1") {
+      appState.userAgreed = true;
+    }
+
+    const storedTotal = parseInt(
+      window.localStorage.getItem(STORAGE_KEYS.CREDITS_TOTAL) || "0",
+      10
+    );
+    const storedUsed = parseInt(
+      window.localStorage.getItem(STORAGE_KEYS.CREDITS_USED) || "0",
+      10
+    );
+    if (!Number.isNaN(storedTotal)) appState.creditsTotal = storedTotal;
+    if (!Number.isNaN(storedUsed)) appState.creditsUsed = storedUsed;
+
+    const storedImages = window.localStorage.getItem(
+      STORAGE_KEYS.GENERATED_IMAGES
+    );
+    if (storedImages) {
+      try {
+        const arr = JSON.parse(storedImages);
+        if (Array.isArray(arr)) {
+          appState.generatedImages = arr;
+        }
+      } catch (e) {
+        console.warn("Cannot parse GENERATED_IMAGES", e);
+      }
+    }
+
+    const storedPack = window.localStorage.getItem(STORAGE_KEYS.SELECTED_PACK);
+    if (storedPack && PACK_SIZES[storedPack]) {
+      appState.selectedPack = storedPack;
+    }
+  } catch (e) {
+    console.warn("Cannot read localStorage", e);
+  }
+}
