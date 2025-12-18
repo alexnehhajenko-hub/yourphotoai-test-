@@ -1,5 +1,5 @@
 // assets/js/generation.js
-// Загрузка фото, вызов /api/generate или /api/restore, учёт демо/пакетов, отправка email.
+// Загрузка фото, вызов /api/generate, учёт демо/пакетов, отправка email.
 
 import {
   appState,
@@ -76,22 +76,6 @@ export async function handleGenerateClick() {
     return;
   }
 
-  // ✅ ЗАЩИТА: если пользователь выбрал стиль/эффекты/поздравление —
-  // значит он точно хочет портретную генерацию, даже если где-то "залип" restore режим.
-  const hasPortraitIntent =
-    Boolean(appState.selectedStyle) ||
-    (Array.isArray(appState.selectedEffects) && appState.selectedEffects.length > 0) ||
-    Boolean(appState.selectedGreeting);
-
-  if (hasPortraitIntent && appState.mode === "restore") {
-    appState.mode = "portrait";
-    try {
-      window.localStorage.setItem(STORAGE_KEYS.MODE, "portrait");
-    } catch (e) {
-      // ignore
-    }
-  }
-
   // Проверяем демо / оплату
   if (DEMO_MODE) {
     if (!appState.userEmail || !appState.userAgreed) {
@@ -124,26 +108,16 @@ export async function handleGenerateClick() {
   showGenerating(true);
 
   try {
-    const isRestore = appState.mode === "restore";
+    const payload = {
+      style: appState.selectedStyle || "beauty",
+      text: "",
+      photo: appState.photoBase64,
+      effects: appState.selectedEffects,
+      greeting: appState.selectedGreeting || null,
+      language: appState.language || "en"
+    };
 
-    const payload = isRestore
-      ? {
-          photo: appState.photoBase64,
-          text: "",
-          options: { colorize: false, enhance: true }
-        }
-      : {
-          style: appState.selectedStyle || "beauty",
-          text: "",
-          photo: appState.photoBase64,
-          effects: appState.selectedEffects,
-          greeting: appState.selectedGreeting || null,
-          language: appState.language || "en"
-        };
-
-    const endpoint = isRestore ? "/api/restore" : "/api/generate";
-
-    const resp = await fetch(endpoint, {
+    const resp = await fetch("/api/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -164,8 +138,7 @@ export async function handleGenerateClick() {
     showResultPortrait(data.image);
     // Учитываем генерацию (кредиты, список картинок)
     registerGeneration(data.image);
-
-    // Сброс эффектов/поздравления после успешной генерации
+    // Сбрасываем выбранные эффекты и поздравление после успешной генерации
     clearEffectsSelection();
   } catch (err) {
     console.error("GENERATION ERROR:", err);
