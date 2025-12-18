@@ -1,99 +1,112 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
-// Фото / текст / эффекты кожи / мимика / поздравления (EN-надписи)
+// Фото / эффекты кожи / мимика / поздравления (БЕЗ надписей на изображении)
 
 import Replicate from "replicate";
 
 // ───────────── СТИЛИ ─────────────
 const STYLE_PREFIX = {
-  oil: "oil painting portrait, detailed, soft warm light, artistic, rich colors, keep original background unless it looks like a screenshot",
+  oil: "oil painting portrait, detailed, soft warm light, artistic, rich colors, preserve the same person",
   anime:
-    "anime style portrait, clean line art, soft pastel shading, big expressive eyes, colorful background, keep the same person",
+    "anime style portrait, clean line art, soft pastel shading, expressive eyes, preserve the same person",
   poster:
-    "cinematic movie poster portrait, dramatic lighting, high contrast, shallow depth of field, colorful atmosphere, keep the same person",
+    "cinematic movie poster portrait, dramatic lighting, high contrast, shallow depth of field, preserve the same person",
   classic:
-    "classical old master portrait, realism, warm tones, detailed skin, soft vignette, subtle textured background",
+    "classical old master portrait, realism, warm tones, detailed skin, subtle textured background, preserve the same person",
 
-  // 🔹 ВИНТАЖ / СТАРОЕ ФОТО
   "old-photo":
-    "vintage old photo portrait, slightly faded colors, soft warm tone, subtle film grain, gentle vignette, keep the same person and keep the original background and clothes, do not erase the background",
+    "vintage old photo portrait, slightly faded colors, soft warm tone, subtle film grain, gentle vignette, preserve the same person, do not erase the background",
 
-  // 🔥 ТЁМНЫЙ ДЕМОН
   "dark-demon":
-    "dark fantasy horror portrait of the same person, dramatic moody lighting, strong contrast, subtle demonic elements like glowing eyes, dark aura or small horns, highly detailed realistic face, cinematic horror atmosphere. keep the head and shoulders and keep a slightly visible dark background or smoke, not solid pure black, no blood, no gore",
+    "dark fantasy horror portrait of the same person, dramatic moody lighting, strong contrast, subtle demonic elements like small horns or dark aura, highly detailed realistic face, cinematic horror atmosphere, no blood, no gore",
 
-  // по умолчанию — обычный реалистичный портрет
   default:
-    "realistic portrait, detailed face, soft studio lighting, natural colors, keep original background if it is not a UI screenshot"
+    "realistic portrait, detailed face, soft studio lighting, natural colors, preserve the same person"
 };
 
 // ───────── ЭФФЕКТЫ КОЖИ + МИМИКА ─────────
 const EFFECT_PROMPTS = {
-  // кожа — «старые»
+  // кожа — усиленные
   "no-wrinkles":
-    "same person with slightly reduced visibility of wrinkles, a bit softer skin texture, still natural and realistic",
+    "reduce wrinkles strongly but naturally: smooth forehead lines, crow's feet, under-eye wrinkles, nasolabial folds; keep pores and realistic skin texture; keep identity",
   younger:
-    "same person looking a bit younger and more rested, fresher skin, but clearly the same face and gender",
+    "make the same person look clearly younger (about 10-20 years), healthier and more rested; reduce signs of aging (wrinkles, under-eye bags, sagging) but keep the same identity and facial structure",
   "smooth-skin":
-    "same person with smoother and more even skin, reduced blemishes, preserved pores, realistic skin texture",
+    "smooth and even out skin tone, reduce blemishes and small imperfections, keep pores and realistic texture",
 
-  // кожа — «новые»
   "beauty-one-touch":
-    "keep exactly the same person and the same face, only gently smooth the skin, remove acne and small blemishes, reduce fine wrinkles, keep natural pores and realistic skin",
+    "one-touch beauty: remove acne and small blemishes, reduce fine and medium wrinkles, improve skin tone, soften harsh shadows on the face, keep pores and realism, keep identity",
+
   "glow-golden":
-    "same person with warm golden glow on the face, healthy skin, soft highlights",
+    "warm golden glow on the face, healthy skin, soft highlights, keep identity",
   "cinematic-light":
-    "same person with cinematic soft key light and gentle shadows on the face, better contrast, no change of identity",
+    "cinematic soft key light and gentle shadows on the face, better contrast, keep identity",
 
   // мимика
   "smile-soft":
-    "same person with a subtle soft smile, calm and relaxed expression, no change to face structure",
+    "same person with a subtle soft smile, calm relaxed expression, no change to face structure",
   "smile-big":
-    "same person with a big warm smile, expressive and friendly face",
+    "same person with a big warm smile, friendly face",
   "smile-hollywood":
-    "same person with a wide hollywood smile, visible teeth but still natural, confident look",
+    "same person with a wide natural smile, visible teeth, confident look",
   laugh:
-    "same person laughing with a bright smile, joyful and natural expression",
+    "same person laughing naturally, joyful expression",
   neutral:
-    "same person with neutral face expression, relaxed, no visible strong emotion",
+    "same person with neutral relaxed face expression",
   serious:
-    "same person with a serious face, no smile, focused thoughtful expression",
+    "same person with a serious focused expression",
   "eyes-bigger":
-    "same person with slightly more open and attentive eyes, keep the same eye shape and identity",
+    "same person with slightly more open attentive eyes, keep eye shape and identity",
   "eyes-brighter":
-    "same person with brighter, more vivid and expressive gaze, no change to facial structure",
+    "same person with brighter more vivid gaze, keep facial structure",
   "surprised-wow":
     "same person with a surprised wow expression, eyes a bit wider, eyebrows raised"
 };
 
-// ───────── ПОЗДРАВЛЕНИЯ ─────────
+// ───────── ПОЗДРАВЛЕНИЯ (БЕЗ ТЕКСТА НА КАРТИНКЕ) ─────────
 const GREETING_PROMPTS = {
   "new-year":
-    "festive bright New Year portrait, cozy winter atmosphere, colorful lights and bokeh, fireworks in the distance, vivid contrast, elegant handwritten English text 'Happy New Year' on the image",
+    "festive New Year portrait, cozy winter atmosphere, colorful lights and bokeh, subtle fireworks in the distance, vivid contrast, NO text on the image",
   birthday:
-    "colorful birthday celebration portrait, balloons and confetti, party lights, bright and happy mood, elegant handwritten English text 'Happy Birthday' on the image",
+    "colorful birthday celebration atmosphere, balloons and confetti, party lights, bright happy mood, NO text on the image",
   funny:
-    "playful fun portrait, very bright colors, dynamic neon shapes, comic-style details, bold handwritten English English text like 'You look amazing!' on the image",
+    "playful fun portrait, bright colors, comic-style shapes, cheerful vibe, NO text on the image",
   scary:
-    "dark spooky horror-style portrait, cold dramatic lighting, subtle fog and scary background details, creepy but readable handwritten English text 'Happy Halloween' on the image"
+    "dark spooky portrait, cold dramatic lighting, subtle fog, creepy but non-gory, NO text on the image"
 };
 
-// ───────── ЖЁСТКО ФИКСИРУЕМ ЛИЧНОСТЬ ─────────
-const IDENTITY_PROMPT =
-  "STRICTLY edit this exact portrait photo of the SAME person from the input image only. " +
-  "The final result MUST be clearly recognizable as the same person, at least 80 percent similar to the input face. " +
-  "Keep the same gender, age range, face shape and main facial features. " +
-  "Do NOT change gender, do NOT turn a man into a woman and do NOT turn a woman into a man. " +
-  "Do NOT replace the face with a different model or a different more beautiful person. " +
-  "Do NOT change the attractiveness level, only apply the requested style, skin and expression corrections.";
+// ───────── ИДЕНТИЧНОСТЬ ─────────
+function buildIdentityPrompt({ allowAgeChange }) {
+  const base =
+    "STRICTLY edit this exact portrait photo of the SAME person from the input image only. " +
+    "The final result MUST be clearly recognizable as the same person (very high similarity). " +
+    "Keep the same gender, face shape and main facial features. " +
+    "Do NOT replace the face with a different person. " +
+    "Do NOT change ethnicity. " +
+    "Do NOT add extra people.";
 
-// ───────── ЧИСТИМ СКРИНШОТЫ ОТ ТЕКСТА ─────────
+  if (allowAgeChange) {
+    return (
+      base +
+      " Age adjustment is allowed ONLY to make the same person look younger naturally, while keeping identity and facial structure."
+    );
+  }
+
+  return (
+    base +
+    " Do NOT change the age noticeably unless a 'younger' or anti-wrinkle effect is explicitly requested."
+  );
+}
+
+// ───────── УБРАТЬ UI/ТЕКСТ/ЛОГОТИПЫ ВСЕГДА ─────────
+const NO_TEXT_TAIL =
+  "ABSOLUTELY NO TEXT, NO LETTERS, NO WATERMARKS, NO LOGOS, NO CAPTIONS, NO SIGNS anywhere in the output image.";
+
 const UI_CLEANUP_TAIL =
-  "If the input looks like a screenshot of a website or app (with panels, buttons, menus, or long text below and around the face), completely remove and repaint all interface elements, panels, captions, buttons, watermark logos and prices. " +
-  "In that case generate only a clean portrait of the person with a simple background and no UI at all.";
+  "If the input looks like a screenshot of a website or app (with panels, buttons, menus, or long text around the face), completely remove and repaint all interface elements and borders. Output only a clean portrait with a simple background.";
 
 // ───────── БЕЗОПАСНОСТЬ ─────────
 const SAFETY_TAIL =
-  "portrait from the shoulders up, person is fully clothed, no nudity, no explicit cleavage, no sexual content, no extra people, no distorted anatomy";
+  "portrait from the shoulders up, person is fully clothed, no nudity, no explicit cleavage, no sexual content, no distorted anatomy";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -101,7 +114,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Парсим тело запроса (Vercel иногда шлёт строку)
     let body = req.body;
     if (typeof body === "string") {
       try {
@@ -113,41 +125,44 @@ export default async function handler(req, res) {
 
     const { style, text, photo, effects, greeting } = body || {};
 
-    // 1) Стиль
     const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
 
-    // 2) Пользовательский текст (если есть)
     const userPrompt = (text || "").trim();
 
-    // 3) Эффекты кожи/мимики
+    const effectsArr = Array.isArray(effects) ? effects : [];
+    const allowAgeChange =
+      effectsArr.includes("younger") ||
+      effectsArr.includes("no-wrinkles") ||
+      effectsArr.includes("beauty-one-touch");
+
     let effectsPrompt = "";
-    if (Array.isArray(effects) && effects.length > 0) {
-      effectsPrompt = effects
+    if (effectsArr.length > 0) {
+      effectsPrompt = effectsArr
         .map((key) => EFFECT_PROMPTS[key])
         .filter(Boolean)
         .join(". ");
     }
 
-    // 4) Поздравление
     let greetingPrompt = "";
     if (greeting && GREETING_PROMPTS[greeting]) {
       greetingPrompt = GREETING_PROMPTS[greeting];
     }
 
-    // 5) Итоговый prompt
+    const identityPrompt = buildIdentityPrompt({ allowAgeChange });
+
     const promptParts = [
       stylePrefix,
       effectsPrompt,
       greetingPrompt,
       userPrompt,
-      IDENTITY_PROMPT,
+      identityPrompt,
+      NO_TEXT_TAIL,
       UI_CLEANUP_TAIL,
       SAFETY_TAIL
     ].filter(Boolean);
 
     const prompt = promptParts.join(". ").trim();
 
-    // 6) Вход в модель Replicate
     const input = {
       prompt,
       output_format: "jpg"
@@ -161,12 +176,10 @@ export default async function handler(req, res) {
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const output = await replicate.run(
-      "black-forest-labs/flux-kontext-pro",
-      { input }
-    );
+    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
+      input
+    });
 
-    // 7) Достаём URL картинки
     let imageUrl = null;
 
     if (Array.isArray(output)) {
