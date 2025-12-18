@@ -1,7 +1,7 @@
 // assets/js/events.js
 // Подписывает кнопки на нужные действия.
 
-import { els, setLanguage, refreshSelectionChips } from "./interface.js";
+import { els, setLanguage } from "./interface.js";
 import {
   openStyleSheet,
   openSkinSheet,
@@ -17,72 +17,23 @@ import {
   closeAgreementModal,
   handleAgreeConfirm
 } from "./payment.js";
-import { appState, STORAGE_KEYS } from "./state.js";
-
-function setMode(mode) {
-  appState.mode = mode;
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.MODE, mode);
-  } catch (e) {
-    // ignore
-  }
-}
-
-// Если пользователь выбирает любой “портретный” инструмент — выходим из restore режима
-function ensurePortraitMode() {
-  if (appState.mode === "restore") {
-    setMode("portrait");
-  }
-}
 
 export function attachMainHandlers() {
   if (els.btnStyle) {
-    els.btnStyle.addEventListener("click", () => {
-      ensurePortraitMode();
-      openStyleSheet();
-    });
+    els.btnStyle.addEventListener("click", () => openStyleSheet());
   }
   if (els.btnSkin) {
-    els.btnSkin.addEventListener("click", () => {
-      ensurePortraitMode();
-      openSkinSheet();
-    });
+    els.btnSkin.addEventListener("click", () => openSkinSheet());
   }
   if (els.btnMimic) {
-    els.btnMimic.addEventListener("click", () => {
-      ensurePortraitMode();
-      openMimicSheet();
-    });
+    els.btnMimic.addEventListener("click", () => openMimicSheet());
   }
   if (els.btnGreetings) {
-    els.btnGreetings.addEventListener("click", () => {
-      ensurePortraitMode();
-      openGreetingSheet();
-    });
+    els.btnGreetings.addEventListener("click", () => openGreetingSheet());
   }
-
-  // ✅ RESTORE button — включает только режим реставрации (без подсказок/confirm)
-  if (els.btnRestore) {
-    els.btnRestore.addEventListener("click", () => {
-      setMode("restore");
-
-      // для реставрации стили/эффекты/поздравления не нужны
-      appState.selectedStyle = null;
-      appState.selectedEffects = [];
-      appState.selectedGreeting = null;
-
-      try {
-        refreshSelectionChips();
-      } catch (e) {
-        // ignore
-      }
-    });
-  }
-
   if (els.btnGenerate) {
     els.btnGenerate.addEventListener("click", () => handleGenerateClick());
   }
-
   if (els.btnAddPhoto) {
     els.btnAddPhoto.addEventListener("click", () => {
       if (els.fileInput) els.fileInput.click();
