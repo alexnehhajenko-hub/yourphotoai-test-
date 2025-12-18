@@ -1,323 +1,206 @@
-// assets/js/generation.js
-// Загрузка фото, вызов /api/generate или /api/restore, учёт демо/пакетов, отправка email.
+// api/generate.js — FLUX-Kontext-Pro (Replicate)
+// Фото / текст / эффекты кожи / мимика / поздравления (EN-надписи)
 
-import {
-  appState,
-  DEMO_MODE,
-  DEMO_SESSION_LIMIT,
-  STORAGE_KEYS,
-  UI_TEXT,
-  PACK_SIZES
-} from "./state.js";
-import {
-  els,
-  refreshSelectionChips,
-  setLayer,
-  updateGreetingOverlay
-} from "./interface.js";
-import { openAgreementModal, openPayModal } from "./payment.js";
+import Replicate from "replicate";
 
-export function handleFileSelected(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
+// ───────────── СТИЛИ ─────────────
+const STYLE_PREFIX = {
+  oil: "oil painting portrait, detailed, soft warm light, artistic, rich colors, keep original background unless it looks like a screenshot",
+  anime:
+    "anime style portrait, clean line art, soft pastel shading, big expressive eyes, colorful background, keep the same person",
+  poster:
+    "cinematic movie poster portrait, dramatic lighting, high contrast, shallow depth of field, colorful atmosphere, keep the same person",
+  classic:
+    "classical old master portrait, realism, warm tones, detailed skin, soft vignette, subtle textured background",
 
-  appState.originalFile = file;
+  // 🔹 ВИНТАЖ / СТАРОЕ ФОТО
+  "old-photo":
+    "vintage old photo portrait, slightly faded colors, soft warm tone, subtle film grain, gentle vignette, keep the same person and keep the original background and clothes, do not erase the background",
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const resizedDataUrl = resizeImageToMax(img, 1024);
-      appState.photoBase64 = resizedDataUrl;
+  // 🔥 ТЁМНЫЙ ДЕМОН
+  "dark-demon":
+    "dark fantasy horror portrait of the same person, dramatic moody lighting, strong contrast, subtle demonic elements like glowing eyes, dark aura or small horns, highly detailed realistic face, cinematic horror atmosphere. keep the head and shoulders and keep a slightly visible dark background or smoke, not solid pure black, no blood, no gore",
 
-      if (els.previewImage) {
-        els.previewImage.src = resizedDataUrl;
-        els.previewImage.style.display = "block";
+  // по умолчанию — обычный реалистичный портрет
+  default:
+    "realistic portrait, detailed face, soft studio lighting, natural colors, keep original background if it is not a UI screenshot"
+};
+
+// ───────── ЭФФЕКТЫ КОЖИ + МИМИКА ─────────
+const EFFECT_PROMPTS = {
+  // кожа — «старые»
+  "no-wrinkles":
+    "same person with slightly reduced visibility of wrinkles, a bit softer skin texture, still natural and realistic",
+  younger:
+    "same person looking a bit younger and more rested, fresher skin, but clearly the same face and gender",
+  "smooth-skin":
+    "same person with smoother and more even skin, reduced blemishes, preserved pores, realistic skin texture",
+
+  // кожа — «новые»
+  "beauty-one-touch":
+    "keep exactly the same person and the same face, only gently smooth the skin, remove acne and small blemishes, reduce fine wrinkles, keep natural pores and realistic skin",
+  "glow-golden":
+    "same person with warm golden glow on the face, healthy skin, soft highlights",
+  "cinematic-light":
+    "same person with cinematic soft key light and gentle shadows on the face, better contrast, no change of identity",
+
+  // мимика
+  "smile-soft":
+    "same person with a subtle soft smile, calm and relaxed expression, no change to face structure",
+  "smile-big":
+    "same person with a big warm smile, expressive and friendly face",
+  "smile-hollywood":
+    "same person with a wide hollywood smile, visible teeth but still natural, confident look",
+  laugh:
+    "same person laughing with a bright smile, joyful and natural expression",
+  neutral:
+    "same person with neutral face expression, relaxed, no visible strong emotion",
+  serious:
+    "same person with a serious face, no smile, focused thoughtful expression",
+  "eyes-bigger":
+    "same person with slightly more open and attentive eyes, keep the same eye shape and identity",
+  "eyes-brighter":
+    "same person with brighter, more vivid and expressive gaze, no change to facial structure",
+  "surprised-wow":
+    "same person with a surprised wow expression, eyes a bit wider, eyebrows raised"
+};
+
+// ───────── ПОЗДРАВЛЕНИЯ ─────────
+const GREETING_PROMPTS = {
+  "new-year":
+    "festive bright New Year portrait, cozy winter atmosphere, colorful lights and bokeh, fireworks in the distance, vivid contrast, elegant handwritten English text 'Happy New Year' on the image",
+  birthday:
+    "colorful birthday celebration portrait, balloons and confetti, party lights, bright and happy mood, elegant handwritten English text 'Happy Birthday' on the image",
+  funny:
+    "playful fun portrait, very bright colors, dynamic neon shapes, comic-style details, bold handwritten English English text like 'You look amazing!' on the image",
+  scary:
+    "dark spooky horror-style portrait, cold dramatic lighting, subtle fog and scary background details, creepy but readable handwritten English text 'Happy Halloween' on the image"
+};
+
+// ───────── ЖЁСТКО ФИКСИРУЕМ ЛИЧНОСТЬ ─────────
+const IDENTITY_PROMPT =
+  "STRICTLY edit this exact portrait photo of the SAME person from the input image only. " +
+  "The final result MUST be clearly recognizable as the same person, at least 80 percent similar to the input face. " +
+  "Keep the same gender, age range, face shape and main facial features. " +
+  "Do NOT change gender, do NOT turn a man into a woman and do NOT turn a woman into a man. " +
+  "Do NOT replace the face with a different model or a different more beautiful person. " +
+  "Do NOT change the attractiveness level, only apply the requested style, skin and expression corrections.";
+
+// ───────── ЧИСТИМ СКРИНШОТЫ ОТ ТЕКСТА ─────────
+const UI_CLEANUP_TAIL =
+  "If the input looks like a screenshot of a website or app (with panels, buttons, menus, or long text below and around the face), completely remove and repaint all interface elements, panels, captions, buttons, watermark logos and prices. " +
+  "In that case generate only a clean portrait of the person with a simple background and no UI at all.";
+
+// ───────── БЕЗОПАСНОСТЬ ─────────
+const SAFETY_TAIL =
+  "portrait from the shoulders up, person is fully clothed, no nudity, no explicit cleavage, no sexual content, no extra people, no distorted anatomy";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  try {
+    // Парсим тело запроса (Vercel иногда шлёт строку)
+    let body = req.body;
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        body = {};
       }
-      if (els.previewPlaceholder) {
-        els.previewPlaceholder.style.display = "none";
-      }
-      if (els.downloadLink) {
-        els.downloadLink.style.display = "none";
-      }
-      updateGreetingOverlay();
+    }
+
+    const { style, text, photo, effects, greeting } = body || {};
+
+    // 1) Стиль
+    const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
+
+    // 2) Пользовательский текст (если есть)
+    const userPrompt = (text || "").trim();
+
+    // 3) Эффекты кожи/мимики
+    let effectsPrompt = "";
+    if (Array.isArray(effects) && effects.length > 0) {
+      effectsPrompt = effects
+        .map((key) => EFFECT_PROMPTS[key])
+        .filter(Boolean)
+        .join(". ");
+    }
+
+    // 4) Поздравление
+    let greetingPrompt = "";
+    if (greeting && GREETING_PROMPTS[greeting]) {
+      greetingPrompt = GREETING_PROMPTS[greeting];
+    }
+
+    // 5) Итоговый prompt
+    const promptParts = [
+      stylePrefix,
+      effectsPrompt,
+      greetingPrompt,
+      userPrompt,
+      IDENTITY_PROMPT,
+      UI_CLEANUP_TAIL,
+      SAFETY_TAIL
+    ].filter(Boolean);
+
+    const prompt = promptParts.join(". ").trim();
+
+    // 6) Вход в модель Replicate
+    const input = {
+      prompt,
+      output_format: "jpg"
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
 
-function resizeImageToMax(img, maxSize) {
-  const canvas = document.createElement("canvas");
-  let { width, height } = img;
-
-  if (width > height && width > maxSize) {
-    height = Math.round((height * maxSize) / width);
-    width = maxSize;
-  } else if (height >= width && height > maxSize) {
-    width = Math.round((width * maxSize) / height);
-    height = maxSize;
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0, width, height);
-  return canvas.toDataURL("image/jpeg", 0.9);
-}
-
-function setMode(mode) {
-  appState.mode = mode;
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.MODE, mode);
-  } catch (e) {
-    // ignore
-  }
-}
-
-export async function handleGenerateClick() {
-  if (appState.isGenerating) return;
-
-  const t = UI_TEXT[appState.language] || UI_TEXT.en;
-
-  if (!appState.photoBase64) {
-    alert(t.alertAddPhoto || "Please add a photo first.");
-    return;
-  }
-
-  // Проверяем демо / оплату
-  if (DEMO_MODE) {
-    if (!appState.userEmail || !appState.userAgreed) {
-      openAgreementModal();
-      return;
+    if (photo) {
+      input.input_image = photo;
     }
-    if (
-      appState.creditsTotal > 0 &&
-      appState.creditsUsed >= appState.creditsTotal
-    ) {
-      alert(t.alertDemoFinished || UI_TEXT.en.alertDemoFinished);
-      return;
-    }
-  } else {
-    if (!appState.hasActivePack) {
-      alert(t.alertNoActivePack || UI_TEXT.en.alertNoActivePack);
-      openPayModal();
-      return;
-    }
-    if (
-      appState.creditsTotal > 0 &&
-      appState.creditsUsed >= appState.creditsTotal
-    ) {
-      alert(t.alertPaidFinished || UI_TEXT.en.alertPaidFinished);
-      return;
-    }
-  }
 
-  appState.isGenerating = true;
-  showGenerating(true);
-
-  try {
-    // ✅ если выбран стиль/эффекты/поздравление — это ТОЧНО портрет, даже если mode случайно restore
-    const wantsPortrait =
-      Boolean(appState.selectedStyle) ||
-      (Array.isArray(appState.selectedEffects) && appState.selectedEffects.length > 0) ||
-      Boolean(appState.selectedGreeting);
-
-    const isRestore = appState.mode === "restore" && !wantsPortrait;
-
-    const payload = isRestore
-      ? {
-          photo: appState.photoBase64,
-          language: appState.language || "en"
-        }
-      : {
-          style: appState.selectedStyle || "beauty",
-          text: "",
-          photo: appState.photoBase64,
-          effects: appState.selectedEffects,
-          greeting: appState.selectedGreeting || null,
-          language: appState.language || "en"
-        };
-
-    const endpoint = isRestore ? "/api/restore" : "/api/generate";
-
-    const resp = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN
     });
 
-    if (!resp.ok) {
-      throw new Error("Generation server error");
-    }
+    const output = await replicate.run(
+      "black-forest-labs/flux-kontext-pro",
+      { input }
+    );
 
-    const data = await resp.json();
-    if (!data || !data.image) {
-      throw new Error("No image URL in response");
-    }
+    // 7) Достаём URL картинки
+    let imageUrl = null;
 
-    // Показываем результат
-    showResultPortrait(data.image);
-    // Учитываем генерацию (кредиты, список картинок)
-    registerGeneration(data.image);
-
-    // ✅ после успешной реставрации — возвращаемся в portrait, чтобы “масло” не ломалось
-    if (isRestore) {
-      setMode("portrait");
+    if (Array.isArray(output)) {
+      imageUrl = output[0];
+    } else if (output?.output) {
+      if (Array.isArray(output.output)) imageUrl = output.output[0];
+      else if (typeof output.output === "string") imageUrl = output.output;
+    } else if (typeof output === "string") {
+      imageUrl = output;
+    } else if (output?.url) {
       try {
-        refreshSelectionChips();
-      } catch (e) {
+        imageUrl = output.url();
+      } catch {
         // ignore
       }
     }
 
-    // Сброс эффектов/поздравления после успешной генерации
-    clearEffectsSelection();
+    if (!imageUrl) {
+      return res.status(500).json({
+        error: "No image URL returned",
+        raw: output
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      image: imageUrl,
+      prompt
+    });
   } catch (err) {
     console.error("GENERATION ERROR:", err);
-    alert(t.alertGenerationFailed || UI_TEXT.en.alertGenerationFailed);
-  } finally {
-    showGenerating(false);
-    appState.isGenerating = false;
-  }
-}
-
-export function showGenerating(isOn) {
-  if (!els.generateStatus) return;
-  els.generateStatus.style.display = isOn ? "flex" : "none";
-}
-
-export function showResultPortrait(url) {
-  if (els.previewImage) {
-    els.previewImage.src = url;
-    els.previewImage.style.display = "block";
-  }
-  if (els.previewPlaceholder) {
-    els.previewPlaceholder.style.display = "none";
-  }
-
-  if (els.downloadLink) {
-    els.downloadLink.href = url;
-    els.downloadLink.style.display = "inline-flex";
-  }
-
-  updateGreetingOverlay();
-  document.body.classList.add("result-mode");
-  setLayer("result", true);
-}
-
-export function exitResultView(pushHistory = true) {
-  document.body.classList.remove("result-mode");
-  if (pushHistory) setLayer("home", true);
-}
-
-function registerGeneration(imageUrl) {
-  if (appState.creditsTotal <= 0) {
-    if (DEMO_MODE) {
-      appState.creditsTotal = DEMO_SESSION_LIMIT;
-    } else if (appState.selectedPack && PACK_SIZES[appState.selectedPack]) {
-      appState.creditsTotal = PACK_SIZES[appState.selectedPack];
-    }
-  }
-
-  appState.creditsUsed += 1;
-
-  if (!appState.generatedImages.includes(imageUrl)) {
-    appState.generatedImages.push(imageUrl);
-  }
-
-  try {
-    window.localStorage.setItem(
-      STORAGE_KEYS.CREDITS_TOTAL,
-      String(appState.creditsTotal)
-    );
-    window.localStorage.setItem(
-      STORAGE_KEYS.CREDITS_USED,
-      String(appState.creditsUsed)
-    );
-    window.localStorage.setItem(
-      STORAGE_KEYS.GENERATED_IMAGES,
-      JSON.stringify(appState.generatedImages)
-    );
-  } catch (e) {
-    console.warn("Cannot store credits/images", e);
-  }
-
-  refreshSelectionChips();
-
-  if (DEMO_MODE && appState.creditsUsed >= appState.creditsTotal) {
-    finishSessionAndSendEmail();
-  }
-}
-
-function clearEffectsSelection() {
-  appState.selectedEffects = [];
-  appState.selectedGreeting = null;
-
-  refreshSelectionChips();
-  updateGreetingOverlay();
-}
-
-async function finishSessionAndSendEmail() {
-  const t = UI_TEXT[appState.language] || UI_TEXT.en;
-
-  const email = appState.userEmail;
-  if (!email) {
-    alert("Email not found. Cannot send portraits.");
-    return;
-  }
-
-  if (!appState.generatedImages || appState.generatedImages.length === 0) {
-    alert("No generated portraits to send.");
-    return;
-  }
-
-  try {
-    const resp = await fetch("/api/send-portraits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        images: appState.generatedImages,
-        total: appState.creditsTotal,
-        used: appState.creditsUsed
-      })
+    return res.status(500).json({
+      error: "Generation failed",
+      details: err?.message || String(err)
     });
-
-    if (!resp.ok) {
-      throw new Error("Email server error");
-    }
-
-    const data = await resp.json();
-    if (!data || !data.ok) {
-      throw new Error("Email service did not confirm sending.");
-    }
-
-    alert(
-      `Session finished. We sent ${appState.generatedImages.length} portrait(s) to ${email}.`
-    );
-
-    resetDemoSession();
-  } catch (err) {
-    console.error("SEND EMAIL ERROR:", err);
-    alert(
-      "Portraits have been generated, but email could not be sent. Please try later."
-    );
   }
-}
-
-function resetDemoSession() {
-  appState.creditsTotal = 0;
-  appState.creditsUsed = 0;
-  appState.generatedImages = [];
-
-  try {
-    window.localStorage.removeItem(STORAGE_KEYS.CREDITS_TOTAL);
-    window.localStorage.removeItem(STORAGE_KEYS.CREDITS_USED);
-    window.localStorage.removeItem(STORAGE_KEYS.GENERATED_IMAGES);
-  } catch (e) {
-    console.warn("Cannot clear demo session storage", e);
-  }
-
-  refreshSelectionChips();
 }
