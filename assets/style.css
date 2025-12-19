@@ -366,4 +366,11 @@ body {
   .preview-placeholder {
     min-height: 220px;
   }
+}/* HOTFIX: remove duplicate "Preview" frame (pseudo-elements) */
+.preview-box::before,
+.preview-box::after,
+.preview-box .preview-frame::before,
+.preview-box .preview-frame::after {
+  content: none !important;
+  display: none !important;
 }
