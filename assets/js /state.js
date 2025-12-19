@@ -3,8 +3,6 @@
 
 export const SUPPORT_EMAIL = "yourphotoaivip@gmail.com";
 
-// Сейчас оставим демо включённым, чтобы было удобно тестировать.
-// Когда включим реальные оплаты — поменяем DEMO_MODE на false.
 export const DEMO_MODE = false;
 export const DEMO_SESSION_LIMIT = 5;
 
@@ -14,7 +12,7 @@ export const PACK_SIZES = {
   pack30: 30
 };
 
-export const SUPPORTED_LANGS = ["en", "de", "es", "ru"];
+export const SUPPORTED_LANGS = ["en", "de", "es", "fr"];
 
 export const STORAGE_KEYS = {
   HAS_ACTIVE_PACK: "yourphotoai_hasActivePack",
@@ -27,7 +25,6 @@ export const STORAGE_KEYS = {
   SELECTED_PACK: "yourphotoai_selectedPack"
 };
 
-// Основные тексты интерфейса (чтобы не лезть в JS каждый раз)
 export const UI_TEXT = {
   en: {
     subtitle: "Create your unique AI portrait",
@@ -91,6 +88,7 @@ export const UI_TEXT = {
     paymentSuccess:
       "Payment completed! 🎉 You can now generate portraits with your package."
   },
+
   de: {
     subtitle: "Erstelle dein einzigartiges KI-Porträt",
     previewLabel: "VORSCHAU",
@@ -133,6 +131,7 @@ export const UI_TEXT = {
     download: "Porträt herunterladen",
     supportLabel: "Support:"
   },
+
   es: {
     subtitle: "Crea tu retrato único con IA",
     previewLabel: "VISTA PREVIA",
@@ -175,75 +174,56 @@ export const UI_TEXT = {
     download: "Descargar retrato",
     supportLabel: "Soporte:"
   },
-  ru: {
-    subtitle: "Создайте свой уникальный AI-портрет",
-    previewLabel: "ПРЕДПРОСМОТР",
+
+  fr: {
+    subtitle: "Créez votre portrait IA unique",
+    previewLabel: "APERÇU",
     previewPlaceholder:
-      "Добавьте фото и выберите эффекты.\nПосле генерации сюда попадёт ваш портрет.",
-    generateStatus: "Генерация портрета…",
+      "Ajoutez une photo et choisissez des effets.\nAprès génération, votre portrait apparaîtra ici.",
+    generateStatus: "Génération du portrait…",
 
-    btnStyle: "СТИЛЬ ПОРТРЕТА",
-    btnSkin: "ЭФФЕКТ КОЖИ",
-    btnMimic: "МИМИКА",
-    btnGreetings: "ПОЗДРАВЛЕНИЯ",
-    btnGenerate: "ГЕНЕРИРОВАТЬ",
-    btnAddPhoto: "ДОБАВИТЬ ФОТО",
-    btnPay: "ПАКЕТЫ",
+    btnStyle: "STYLE DU PORTRAIT",
+    btnSkin: "EFFET DE PEAU",
+    btnMimic: "EXPRESSION",
+    btnGreetings: "FÉLICITATIONS",
+    btnGenerate: "GÉNÉRER",
+    btnAddPhoto: "AJOUTER UNE PHOTO",
+    btnPay: "PACKS",
 
-    sheetOptionsTitle: "Варианты",
-    sheetCategoryTitle: "Категории",
+    sheetOptionsTitle: "Options",
+    sheetCategoryTitle: "Catégories",
 
-    payTitle: "Выберите пакет",
-    paySectionTitle: "Пакеты генераций",
-    payNext: "Далее",
-    payPack10Title: "10 генераций",
-    payPack20Title: "20 генераций",
-    payPack30Title: "30 генераций",
+    payTitle: "Choisissez un pack",
+    paySectionTitle: "Packs de génération",
+    payNext: "Continuer",
+    payPack10Title: "10 générations",
+    payPack20Title: "20 générations",
+    payPack30Title: "30 générations",
 
-    agreementTitle: "Подтверждение",
+    agreementTitle: "Confirmation",
     agreementText:
-      "Перед оплатой подтвердите возраст и согласие с условиями.\n\n" +
-      "Важно: YourPhotoAI создаёт AI-портреты по вашему фото. " +
-      "После завершения сессии готовые изображения будут отправлены на указанный email.",
-    agreementEmailTitle: "Ваш email",
+      "Avant le paiement, veuillez confirmer votre âge et votre consentement.\n\n" +
+      "Important : YourPhotoAI crée des portraits IA à partir de votre photo. " +
+      "À la fin de la session, les images finales seront envoyées à l’email indiqué.",
+    agreementEmailTitle: "Votre email",
     agreementCheckboxHtml:
-      'Мне 16+ и я согласен с <a href="#">Terms</a>, ' +
-      '<a href="#">Privacy</a>, <a href="#">Refunds</a>.',
-    agreementSubmitDemo: "Продолжить",
-    agreementSubmitPaid: "Перейти к оплате",
+      "J’ai 16+ ans et j’accepte les <a href=\"#\">Conditions</a>, " +
+      "<a href=\"#\">Confidentialité</a>, <a href=\"#\">Remboursements</a>.",
+    agreementSubmitDemo: "Continuer",
+    agreementSubmitPaid: "Aller au paiement",
     agreementHint:
-      "Оплата обрабатывается через Stripe. Мы не видим и не храним данные вашей карты.",
+      "Les paiements sont traités via Stripe. Nous ne voyons ni ne stockons vos données de carte.",
 
-    download: "Скачать портрет",
-    supportLabel: "Поддержка:"
+    download: "Télécharger le portrait",
+    supportLabel: "Support :"
   }
 };
 
 export const GREETING_LABELS = {
-  en: {
-    "new-year": "New Year 🎄",
-    birthday: "Birthday 🎂",
-    funny: "Funny 😜",
-    scary: "Scary 👻"
-  },
-  de: {
-    "new-year": "Neujahr 🎄",
-    birthday: "Geburtstag 🎂",
-    funny: "Witzig 😜",
-    scary: "Gruselig 👻"
-  },
-  es: {
-    "new-year": "Año Nuevo 🎄",
-    birthday: "Cumpleaños 🎂",
-    funny: "Divertido 😜",
-    scary: "Terrorífico 👻"
-  },
-  ru: {
-    "new-year": "Новый год 🎄",
-    birthday: "День рождения 🎂",
-    funny: "Смешное 😜",
-    scary: "Страшное 👻"
-  }
+  en: { "new-year": "New Year 🎄", birthday: "Birthday 🎂", funny: "Funny 😜", scary: "Scary 👻" },
+  de: { "new-year": "Neujahr 🎄", birthday: "Geburtstag 🎂", funny: "Witzig 😜", scary: "Gruselig 👻" },
+  es: { "new-year": "Año Nuevo 🎄", birthday: "Cumpleaños 🎂", funny: "Divertido 😜", scary: "Terrorífico 👻" },
+  fr: { "new-year": "Nouvel An 🎄", birthday: "Anniversaire 🎂", funny: "Drôle 😜", scary: "Effrayant 👻" }
 };
 
 export const GREETING_TEXT = {
@@ -258,13 +238,16 @@ export const STYLE_LABELS_EN = {
   oil: "Oil painting",
   anime: "Anime",
   poster: "Poster",
-  classic: "Classic portrait"
+  classic: "Classic portrait",
+  "old-photo": "Vintage",
+  "dark-demon": "Dark demon"
 };
 
 export const EFFECT_CHIP_LABELS_EN = {
   "no-wrinkles": "Effect: no wrinkles",
   younger: "Effect: younger",
   "smooth-skin": "Effect: smooth skin",
+  "beauty-one-touch": "Effect: beauty one-touch",
   "glow-golden": "Effect: golden glow",
   "cinematic-light": "Effect: cinematic light",
   "smile-soft": "Expression: soft smile",
@@ -287,8 +270,7 @@ export const SHEET_TEXT = {
     mimicTitle: "Expression",
     mimicDescription: "Choose the facial expression.",
     greetingTitle: "Greetings",
-    greetingDescription:
-      "We will gently add festive atmosphere to the portrait."
+    greetingDescription: "We will gently add festive atmosphere to the portrait."
   },
   de: {
     styleTitle: "Porträtstil",
@@ -298,8 +280,7 @@ export const SHEET_TEXT = {
     mimicTitle: "Mimik",
     mimicDescription: "Wähle den Gesichtsausdruck.",
     greetingTitle: "Grußkarten",
-    greetingDescription:
-      "Wir fügen dem Porträt vorsichtig eine festliche Atmosphäre hinzu."
+    greetingDescription: "Wir fügen dem Porträt vorsichtig eine festliche Atmosphäre hinzu."
   },
   es: {
     styleTitle: "Estilo de retrato",
@@ -309,19 +290,17 @@ export const SHEET_TEXT = {
     mimicTitle: "Expresión",
     mimicDescription: "Elige la expresión facial.",
     greetingTitle: "Felicitaciones",
-    greetingDescription:
-      "Añadiremos suavemente un ambiente festivo al retrato."
+    greetingDescription: "Añadiremos suavemente un ambiente festivo al retrato."
   },
-  ru: {
-    styleTitle: "Стиль портрета",
-    styleDescription: "Выберите основной художественный стиль.",
-    skinTitle: "Эффект кожи",
-    skinDescription: "Выберите эффект, который даст вау-ощущение.",
-    mimicTitle: "Мимика",
-    mimicDescription: "Выберите выражение лица.",
-    greetingTitle: "Поздравления",
-    greetingDescription:
-      "Мы аккуратно добавим праздничный антураж к портрету."
+  fr: {
+    styleTitle: "Style du portrait",
+    styleDescription: "Choisissez le style artistique principal.",
+    skinTitle: "Effet de peau",
+    skinDescription: "Choisissez un effet qui donne un vrai “wow”.",
+    mimicTitle: "Expression",
+    mimicDescription: "Choisissez l’expression du visage.",
+    greetingTitle: "Félicitations",
+    greetingDescription: "Nous ajoutons doucement une ambiance festive au portrait."
   }
 };
 
@@ -361,40 +340,24 @@ export function loadStateFromStorage() {
     }
 
     const storedPaid = window.localStorage.getItem(STORAGE_KEYS.HAS_ACTIVE_PACK);
-    if (storedPaid === "1") {
-      appState.hasActivePack = true;
-    }
+    if (storedPaid === "1") appState.hasActivePack = true;
 
     const storedEmail = window.localStorage.getItem(STORAGE_KEYS.USER_EMAIL);
-    if (storedEmail) {
-      appState.userEmail = storedEmail;
-    }
+    if (storedEmail) appState.userEmail = storedEmail;
 
     const storedAgreed = window.localStorage.getItem(STORAGE_KEYS.USER_AGREED);
-    if (storedAgreed === "1") {
-      appState.userAgreed = true;
-    }
+    if (storedAgreed === "1") appState.userAgreed = true;
 
-    const storedTotal = parseInt(
-      window.localStorage.getItem(STORAGE_KEYS.CREDITS_TOTAL) || "0",
-      10
-    );
-    const storedUsed = parseInt(
-      window.localStorage.getItem(STORAGE_KEYS.CREDITS_USED) || "0",
-      10
-    );
+    const storedTotal = parseInt(window.localStorage.getItem(STORAGE_KEYS.CREDITS_TOTAL) || "0", 10);
+    const storedUsed = parseInt(window.localStorage.getItem(STORAGE_KEYS.CREDITS_USED) || "0", 10);
     if (!Number.isNaN(storedTotal)) appState.creditsTotal = storedTotal;
     if (!Number.isNaN(storedUsed)) appState.creditsUsed = storedUsed;
 
-    const storedImages = window.localStorage.getItem(
-      STORAGE_KEYS.GENERATED_IMAGES
-    );
+    const storedImages = window.localStorage.getItem(STORAGE_KEYS.GENERATED_IMAGES);
     if (storedImages) {
       try {
         const arr = JSON.parse(storedImages);
-        if (Array.isArray(arr)) {
-          appState.generatedImages = arr;
-        }
+        if (Array.isArray(arr)) appState.generatedImages = arr;
       } catch (e) {
         console.warn("Cannot parse GENERATED_IMAGES", e);
       }
