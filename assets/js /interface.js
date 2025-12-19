@@ -6,7 +6,6 @@ import {
   UI_TEXT,
   SUPPORTED_LANGS,
   GREETING_TEXT,
-  SHEET_TEXT,
   EFFECT_CHIP_LABELS_EN,
   STYLE_LABELS_EN,
   DEMO_MODE,
@@ -38,7 +37,7 @@ export function bindElements() {
   els.btnLangEn = document.getElementById("langEn");
   els.btnLangDe = document.getElementById("langDe");
   els.btnLangEs = document.getElementById("langEs");
-  els.btnLangRu = document.getElementById("langRu");
+  els.btnLangFr = document.getElementById("langFr");
 
   els.supportEmail = document.getElementById("supportEmail");
 
@@ -71,12 +70,8 @@ export function bindElements() {
   els.agreePayBtn = document.getElementById("agreePayBtn");
   els.agreementTitle = document.querySelector(".agreement-title");
   els.agreementText = document.querySelector(".agreement-text");
-  els.agreementEmailTitle = document.querySelector(
-    ".agreement-section-title"
-  );
-  els.agreementCheckboxLabel = document.querySelector(
-    ".agreement-checkbox-row span"
-  );
+  els.agreementEmailTitle = document.querySelector(".agreement-section-title");
+  els.agreementCheckboxLabel = document.querySelector(".agreement-checkbox-row span");
   els.agreementHint = document.querySelector(".agreement-hint");
 
   els.downloadLink = document.getElementById("downloadLink");
@@ -97,9 +92,7 @@ export function hideOverlaysOnStart() {
 
 // Смена языка UI
 export function setLanguage(lang) {
-  if (!SUPPORTED_LANGS.includes(lang)) {
-    lang = "en";
-  }
+  if (!SUPPORTED_LANGS.includes(lang)) lang = "en";
   appState.language = lang;
 
   try {
@@ -110,29 +103,19 @@ export function setLanguage(lang) {
 
   const t = UI_TEXT[lang] || UI_TEXT.en;
 
-  if (els.appSubtitle) {
-    els.appSubtitle.textContent = t.subtitle;
-  }
+  if (els.appSubtitle) els.appSubtitle.textContent = t.subtitle;
+  if (els.previewLabel) els.previewLabel.textContent = t.previewLabel;
 
-  if (els.previewLabel) {
-    els.previewLabel.textContent = t.previewLabel;
-  }
   if (els.previewPlaceholder) {
-    els.previewPlaceholder.innerHTML = t.previewPlaceholder
-      .split("\n")
-      .join("<br>");
+    els.previewPlaceholder.innerHTML = t.previewPlaceholder.split("\n").join("<br>");
   }
 
-  if (els.generateStatusText) {
-    els.generateStatusText.textContent = t.generateStatus;
-  }
+  if (els.generateStatusText) els.generateStatusText.textContent = t.generateStatus;
 
   function setButtonLabel(btn, text) {
     if (!btn) return;
     const spans = btn.querySelectorAll("span");
-    if (spans.length >= 2) {
-      spans[1].textContent = text;
-    }
+    if (spans.length >= 2) spans[1].textContent = text;
   }
 
   setButtonLabel(els.btnStyle, t.btnStyle);
@@ -143,15 +126,12 @@ export function setLanguage(lang) {
   setButtonLabel(els.btnAddPhoto, t.btnAddPhoto);
   setButtonLabel(els.btnPay, t.btnPay);
 
-  if (els.sheetOptionsTitle) {
-    els.sheetOptionsTitle.textContent = t.sheetOptionsTitle;
-  }
-  if (els.sheetCategoryTitle) {
-    els.sheetCategoryTitle.textContent = t.sheetCategoryTitle;
-  }
+  if (els.sheetOptionsTitle) els.sheetOptionsTitle.textContent = t.sheetOptionsTitle;
+  if (els.sheetCategoryTitle) els.sheetCategoryTitle.textContent = t.sheetCategoryTitle;
 
   if (els.payTitle) els.payTitle.textContent = t.payTitle;
   if (els.paySectionTitle) els.paySectionTitle.textContent = t.paySectionTitle;
+
   if (els.pkg10) {
     const titleEl = els.pkg10.querySelector(".pay-package-title");
     if (titleEl) titleEl.textContent = t.payPack10Title;
@@ -168,26 +148,14 @@ export function setLanguage(lang) {
 
   if (els.agreementTitle) els.agreementTitle.textContent = t.agreementTitle;
   if (els.agreementText) {
-    els.agreementText.innerHTML = t.agreementText
-      .split("\n")
-      .join("<br><br>");
+    els.agreementText.innerHTML = t.agreementText.split("\n").join("<br><br>");
   }
-  if (els.agreementEmailTitle) {
-    els.agreementEmailTitle.textContent = t.agreementEmailTitle;
-  }
-  if (els.agreementCheckboxLabel) {
-    els.agreementCheckboxLabel.innerHTML = t.agreementCheckboxHtml;
-  }
-  if (els.agreementHint) {
-    els.agreementHint.textContent = t.agreementHint;
-  }
-  if (els.agreePayBtn) {
-    els.agreePayBtn.textContent = t.agreementSubmitDemo;
-  }
+  if (els.agreementEmailTitle) els.agreementEmailTitle.textContent = t.agreementEmailTitle;
+  if (els.agreementCheckboxLabel) els.agreementCheckboxLabel.innerHTML = t.agreementCheckboxHtml;
+  if (els.agreementHint) els.agreementHint.textContent = t.agreementHint;
+  if (els.agreePayBtn) els.agreePayBtn.textContent = t.agreementSubmitDemo;
 
-  if (els.downloadLink) {
-    els.downloadLink.textContent = t.download;
-  }
+  if (els.downloadLink) els.downloadLink.textContent = t.download;
 
   const supportBlock = els.supportEmail && els.supportEmail.parentElement;
   if (supportBlock) {
@@ -196,25 +164,11 @@ export function setLanguage(lang) {
     setupSupportEmail();
   }
 
-  const allButtons = [
-    els.btnLangEn,
-    els.btnLangDe,
-    els.btnLangEs,
-    els.btnLangRu
-  ];
-  allButtons.forEach((b) => {
-    if (!b) return;
-    b.classList.remove("lang-selected");
-  });
-  const mapping = {
-    en: els.btnLangEn,
-    de: els.btnLangDe,
-    es: els.btnLangEs,
-    ru: els.btnLangRu
-  };
-  if (mapping[lang]) {
-    mapping[lang].classList.add("lang-selected");
-  }
+  const allButtons = [els.btnLangEn, els.btnLangDe, els.btnLangEs, els.btnLangFr];
+  allButtons.forEach((b) => b && b.classList.remove("lang-selected"));
+
+  const mapping = { en: els.btnLangEn, de: els.btnLangDe, es: els.btnLangEs, fr: els.btnLangFr };
+  if (mapping[lang]) mapping[lang].classList.add("lang-selected");
 }
 
 export function setLayer(newLayer, pushToHistory = true) {
@@ -224,7 +178,6 @@ export function setLayer(newLayer, pushToHistory = true) {
   }
 }
 
-// Общий sheet
 export function openSheet({ title, description, categories, options }) {
   if (!els.sheetBackdrop) return;
 
@@ -259,14 +212,10 @@ export function openSheet({ title, description, categories, options }) {
     chip.textContent = opt.label;
     chip.dataset.value = opt.value;
 
-    if (opt.selected) {
-      chip.classList.add("chip-selected");
-    }
+    if (opt.selected) chip.classList.add("chip-selected");
 
     chip.addEventListener("click", () => {
-      if (typeof opt.onClick === "function") {
-        opt.onClick(opt.value);
-      }
+      if (typeof opt.onClick === "function") opt.onClick(opt.value);
     });
 
     els.sheetOptionsRow.appendChild(chip);
@@ -282,7 +231,6 @@ export function closeSheet(pushHistory = true) {
   if (pushHistory) setLayer("home", true);
 }
 
-// Чипы под предпросмотром
 export function refreshSelectionChips() {
   if (!els.selectionRow) return;
 
@@ -296,8 +244,7 @@ export function refreshSelectionChips() {
   }
 
   if (appState.selectedStyle) {
-    const name =
-      STYLE_LABELS_EN[appState.selectedStyle] || appState.selectedStyle;
+    const name = STYLE_LABELS_EN[appState.selectedStyle] || appState.selectedStyle;
     addChip(`Style: ${name}`);
   }
 
@@ -306,9 +253,7 @@ export function refreshSelectionChips() {
     addChip(label);
   });
 
-  if (appState.selectedGreeting) {
-    addChip(`Greeting selected`);
-  }
+  if (appState.selectedGreeting) addChip("Greeting selected");
 
   if (appState.selectedPack) {
     const map = {
@@ -323,16 +268,11 @@ export function refreshSelectionChips() {
     addChip(`Used ${appState.creditsUsed} of ${appState.creditsTotal}`);
   }
 
-  if (DEMO_MODE) {
-    addChip("Demo: 5 generations with email");
-  } else if (appState.hasActivePack) {
-    addChip("Paid: package active");
-  } else {
-    addChip("No paid package yet");
-  }
+  if (DEMO_MODE) addChip("Demo: 5 generations with email");
+  else if (appState.hasActivePack) addChip("Paid: package active");
+  else addChip("No paid package yet");
 }
 
-// Текст поверх картинки (пока просто включаем/выключаем, сам текст в письме)
 export function updateGreetingOverlay() {
   if (!els.greetingOverlay) return;
 
