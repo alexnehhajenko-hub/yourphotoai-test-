@@ -68,11 +68,18 @@ body {
   margin-bottom: 8px;
 }
 
+/* ✅ IMPORTANT:
+   Hide preview <img> until it has a real src.
+   Otherwise iOS Safari shows broken-image frame + big ALT text "Preview". */
 .preview-image {
   width: 100%;
   border-radius: 20px;
-  display: block;
   object-fit: cover;
+  display: none;
+}
+
+.preview-image[src]:not([src=""]) {
+  display: block;
 }
 
 .preview-placeholder {
@@ -366,11 +373,4 @@ body {
   .preview-placeholder {
     min-height: 220px;
   }
-}/* HOTFIX: remove duplicate "Preview" frame (pseudo-elements) */
-.preview-box::before,
-.preview-box::after,
-.preview-box .preview-frame::before,
-.preview-box .preview-frame::after {
-  content: none !important;
-  display: none !important;
 }
