@@ -1,5 +1,5 @@
 // assets/js/generation.js
-// Загрузка фото, вызов /api/generate, учёт демо/пакетов, отправка email.
+// Загрузка фото, вызов /api/generate или /api/restore, учёт демо/пакетов, отправка email.
 
 import {
   appState,
@@ -82,7 +82,10 @@ export async function handleGenerateClick() {
       openAgreementModal();
       return;
     }
-    if (appState.creditsTotal > 0 && appState.creditsUsed >= appState.creditsTotal) {
+    if (
+      appState.creditsTotal > 0 &&
+      appState.creditsUsed >= appState.creditsTotal
+    ) {
       alert(t.alertDemoFinished || UI_TEXT.en.alertDemoFinished);
       return;
     }
@@ -92,7 +95,10 @@ export async function handleGenerateClick() {
       openPayModal();
       return;
     }
-    if (appState.creditsTotal > 0 && appState.creditsUsed >= appState.creditsTotal) {
+    if (
+      appState.creditsTotal > 0 &&
+      appState.creditsUsed >= appState.creditsTotal
+    ) {
       alert(t.alertPaidFinished || UI_TEXT.en.alertPaidFinished);
       return;
     }
@@ -102,18 +108,29 @@ export async function handleGenerateClick() {
   showGenerating(true);
 
   try {
-    const payload = {
-      style: appState.selectedStyle || "beauty",
-      text: "",
-      photo: appState.photoBase64,
-      effects: appState.selectedEffects,
-      greeting: appState.selectedGreeting || null,
-      language: appState.language || "en"
-    };
+    const isRestore = appState.mode === "restore";
 
-    const resp = await fetch("/api/generate", {
+    const payload = isRestore
+      ? {
+          photo: appState.photoBase64,
+          language: appState.language || "en"
+        }
+      : {
+          style: appState.selectedStyle || "beauty",
+          text: "",
+          photo: appState.photoBase64,
+          effects: appState.selectedEffects,
+          greeting: appState.selectedGreeting || null,
+          language: appState.language || "en"
+        };
+
+    const endpoint = isRestore ? "/api/restore" : "/api/generate";
+
+    const resp = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify(payload)
     });
 
@@ -126,12 +143,14 @@ export async function handleGenerateClick() {
       throw new Error("No image URL in response");
     }
 
+    // Показываем результат
     showResultPortrait(data.image);
+    // Учитываем генерацию (кредиты, список картинок)
     registerGeneration(data.image);
 
-    // ❗️Важно: НЕ сбрасываем эффекты после генерации (так удобнее тестить “вау”)
-    // clearEffectsSelection();
-
+    // Сброс эффектов/поздравления после успешной генерации
+    // (для restore это просто оставит всё чистым)
+    clearEffectsSelection();
   } catch (err) {
     console.error("GENERATION ERROR:", err);
     alert(t.alertGenerationFailed || UI_TEXT.en.alertGenerationFailed);
@@ -171,6 +190,8 @@ export function exitResultView(pushHistory = true) {
 }
 
 function registerGeneration(imageUrl) {
+  // Инициализируем общее количество генераций,
+  // если ещё не установлено.
   if (appState.creditsTotal <= 0) {
     if (DEMO_MODE) {
       appState.creditsTotal = DEMO_SESSION_LIMIT;
@@ -186,9 +207,18 @@ function registerGeneration(imageUrl) {
   }
 
   try {
-    window.localStorage.setItem(STORAGE_KEYS.CREDITS_TOTAL, String(appState.creditsTotal));
-    window.localStorage.setItem(STORAGE_KEYS.CREDITS_USED, String(appState.creditsUsed));
-    window.localStorage.setItem(STORAGE_KEYS.GENERATED_IMAGES, JSON.stringify(appState.generatedImages));
+    window.localStorage.setItem(
+      STORAGE_KEYS.CREDITS_TOTAL,
+      String(appState.creditsTotal)
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.CREDITS_USED,
+      String(appState.creditsUsed)
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.GENERATED_IMAGES,
+      JSON.stringify(appState.generatedImages)
+    );
   } catch (e) {
     console.warn("Cannot store credits/images", e);
   }
@@ -198,6 +228,15 @@ function registerGeneration(imageUrl) {
   if (DEMO_MODE && appState.creditsUsed >= appState.creditsTotal) {
     finishSessionAndSendEmail();
   }
+}
+
+// Сброс эффектов и поздравления после генерации
+function clearEffectsSelection() {
+  appState.selectedEffects = [];
+  appState.selectedGreeting = null;
+
+  refreshSelectionChips();
+  updateGreetingOverlay();
 }
 
 async function finishSessionAndSendEmail() {
@@ -217,7 +256,9 @@ async function finishSessionAndSendEmail() {
   try {
     const resp = await fetch("/api/send-portraits", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         email,
         images: appState.generatedImages,
@@ -226,16 +267,25 @@ async function finishSessionAndSendEmail() {
       })
     });
 
-    if (!resp.ok) throw new Error("Email server error");
+    if (!resp.ok) {
+      throw new Error("Email server error");
+    }
 
     const data = await resp.json();
-    if (!data || !data.ok) throw new Error("Email service did not confirm sending.");
+    if (!data || !data.ok) {
+      throw new Error("Email service did not confirm sending.");
+    }
 
-    alert(`Session finished. We sent ${appState.generatedImages.length} portrait(s) to ${email}.`);
+    alert(
+      `Session finished. We sent ${appState.generatedImages.length} portrait(s) to ${email}.`
+    );
+
     resetDemoSession();
   } catch (err) {
     console.error("SEND EMAIL ERROR:", err);
-    alert("Portraits have been generated, but email could not be sent. Please try later.");
+    alert(
+      "Portraits have been generated, but email could not be sent. Please try later."
+    );
   }
 }
 
