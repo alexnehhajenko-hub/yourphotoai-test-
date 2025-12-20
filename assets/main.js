@@ -1,7 +1,7 @@
 // assets/main.js
 // Safe entrypoint with on-screen debug (works on mobile)
 
-import * as ui from "./js/interface.js";
+import * as ui from "./interface.js";
 import { appState, loadStateFromStorage } from "./js/state.js";
 import * as events from "./js/events.js";
 import * as payment from "./js/payment.js";
