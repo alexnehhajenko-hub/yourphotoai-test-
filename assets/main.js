@@ -94,10 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
       payment.handleStripeStatusFromUrl();
     }
   } catch (e) {
-    showDebugBadge(
-      "JS ERROR: handleStripeStatusFromUrl failed: " + (e?.message || e),
-      true
-    );
+    showDebugBadge("JS ERROR: handleStripeStatusFromUrl failed: " + (e?.message || e), true);
   }
 
   // 8) refresh chips
