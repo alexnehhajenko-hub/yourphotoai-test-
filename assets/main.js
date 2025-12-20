@@ -1,11 +1,11 @@
 // assets/main.js
 // Safe entrypoint with on-screen debug (works on mobile)
 
-import * as ui from "./interface.js";
-import { appState, loadStateFromStorage } from "./state.js";
-import * as events from "./events.js";
-import * as payment from "./payment.js";
-import * as gen from "./generation.js"; // (gen может быть не нужен, но пусть будет)
+import * as ui from "./js/interface.js";
+import { appState, loadStateFromStorage } from "./js/state.js";
+import * as events from "./js/events.js";
+import * as payment from "./js/payment.js";
+import * as gen from "./js/generation.js";
 
 function showDebugBadge(text, isError = false) {
   try {
@@ -102,14 +102,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 8) refresh chips
   try {
-    if (typeof ui.refreshSelectionChips === "function") {
-      ui.refreshSelectionChips();
-    }
+    if (typeof ui.refreshSelectionChips === "function") ui.refreshSelectionChips();
   } catch (e) {
-    showDebugBadge(
-      "JS ERROR: refreshSelectionChips failed: " + (e?.message || e),
-      true
-    );
+    showDebugBadge("JS ERROR: refreshSelectionChips failed: " + (e?.message || e), true);
   }
 
   showDebugBadge("JS OK: handlers attached ✅");
