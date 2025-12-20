@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   attachMainHandlers();
 
   // 7. Логика кнопки "назад"
-  setupBackButtonLogic();
+  
 
   // 8. Логика кнопки очистки эффектов
   setupClearEffectsButton();
