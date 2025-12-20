@@ -101,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
       true
     );
   }
+  
 
   // 8) refresh chips
   try {
