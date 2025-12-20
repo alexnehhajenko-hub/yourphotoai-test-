@@ -1,98 +1,99 @@
 // api/generate.js — FLUX-Kontext-Pro (Replicate)
-// Фото / эффекты кожи / мимика / поздравления (НО БЕЗ ЛЮБОГО ТЕКСТА НА ИЗОБРАЖЕНИИ)
+// Фото / текст / эффекты кожи / мимика / поздравления (EN-надписи)
 
 import Replicate from "replicate";
 
 // ───────────── СТИЛИ ─────────────
 const STYLE_PREFIX = {
-  beauty:
-    "high-end beauty portrait, flattering soft studio lighting, natural skin, realistic, professional photo look, keep the same person",
-  oil: "oil painting portrait, detailed, soft warm light, artistic, rich colors, keep the same person",
+  oil: "oil painting portrait, detailed, soft warm light, artistic, rich colors, keep original background unless it looks like a screenshot",
   anime:
-    "anime style portrait, clean line art, soft pastel shading, expressive eyes, keep the same person",
+    "anime style portrait, clean line art, soft pastel shading, big expressive eyes, colorful background, keep the same person",
   poster:
-    "cinematic movie poster portrait, dramatic lighting, high contrast, shallow depth of field, keep the same person",
+    "cinematic movie poster portrait, dramatic lighting, high contrast, shallow depth of field, colorful atmosphere, keep the same person",
   classic:
-    "classical old master portrait, realism, warm tones, detailed skin, subtle vignette, keep the same person",
+    "classical old master portrait, realism, warm tones, detailed skin, soft vignette, subtle textured background",
 
-  // 🔹 ВИНТАЖ / СТАРОЕ ФОТО (это не реставрация, это стиль)
+  // 🔹 ВИНТАЖ / СТАРОЕ ФОТО
   "old-photo":
-    "vintage old photo portrait, slightly faded colors, soft warm tone, subtle film grain, gentle vignette, keep the same person",
+    "vintage old photo portrait, slightly faded colors, soft warm tone, subtle film grain, gentle vignette, keep the same person and keep the original background and clothes, do not erase the background",
 
-  // 🔥 ТЁМНЫЙ ДЕМОН (без крови/жести)
+  // 🔥 ТЁМНЫЙ ДЕМОН
   "dark-demon":
-    "dark fantasy portrait of the same person, dramatic moody lighting, strong contrast, subtle demonic vibe (very small horns OR subtle aura), cinematic atmosphere, no blood, no gore, keep recognizable face",
+    "dark fantasy horror portrait of the same person, dramatic moody lighting, strong contrast, subtle demonic elements like glowing eyes, dark aura or small horns, highly detailed realistic face, cinematic horror atmosphere. keep the head and shoulders and keep a slightly visible dark background or smoke, not solid pure black, no blood, no gore",
 
+  // по умолчанию — обычный реалистичный портрет
   default:
-    "realistic portrait, detailed face, soft studio lighting, natural colors, keep the same person"
+    "realistic portrait, detailed face, soft studio lighting, natural colors, keep original background if it is not a UI screenshot"
 };
 
 // ───────── ЭФФЕКТЫ КОЖИ + МИМИКА ─────────
 const EFFECT_PROMPTS = {
-  // кожа — усиленные “вау”
+  // кожа — «старые»
   "no-wrinkles":
-    "reduce wrinkles noticeably (forehead, under eyes, nasolabial folds) while keeping the same identity, realistic skin texture, no plastic look",
+    "same person with slightly reduced visibility of wrinkles, a bit softer skin texture, still natural and realistic",
   younger:
-    "make the same person look clearly younger by about 10-15 years, fresher rested face, smoother under-eye area, reduced wrinkles, keep the same identity and gender",
+    "same person looking a bit younger and more rested, fresher skin, but clearly the same face and gender",
   "smooth-skin":
-    "smooth and even skin tone, reduce blemishes, keep pores subtle and realistic, no over-smoothing",
+    "same person with smoother and more even skin, reduced blemishes, preserved pores, realistic skin texture",
 
+  // кожа — «новые»
   "beauty-one-touch":
-    "one-touch beauty retouch: remove acne and small blemishes, reduce fine wrinkles, even skin tone, keep pores realistic, keep exact identity",
+    "keep exactly the same person and the same face, only gently smooth the skin, remove acne and small blemishes, reduce fine wrinkles, keep natural pores and realistic skin",
   "glow-golden":
-    "warm golden glow on the face, healthy skin highlights, gentle soft light, keep identity",
+    "same person with warm golden glow on the face, healthy skin, soft highlights",
   "cinematic-light":
-    "cinematic soft key light and gentle shadows, better contrast, keep identity",
+    "same person with cinematic soft key light and gentle shadows on the face, better contrast, no change of identity",
 
   // мимика
   "smile-soft":
-    "same person with a subtle soft smile, calm relaxed expression, do not change facial structure",
+    "same person with a subtle soft smile, calm and relaxed expression, no change to face structure",
   "smile-big":
-    "same person with a warm friendly smile, do not change facial structure",
+    "same person with a big warm smile, expressive and friendly face",
   "smile-hollywood":
-    "same person with a wide confident smile, natural teeth, do not change facial structure",
+    "same person with a wide hollywood smile, visible teeth but still natural, confident look",
   laugh:
-    "same person laughing naturally, joyful expression, do not change facial structure",
+    "same person laughing with a bright smile, joyful and natural expression",
   neutral:
-    "same person with neutral relaxed face expression",
+    "same person with neutral face expression, relaxed, no visible strong emotion",
   serious:
-    "same person with serious confident expression, no smile",
+    "same person with a serious face, no smile, focused thoughtful expression",
   "eyes-bigger":
-    "same person with slightly more open attentive eyes, keep identity",
+    "same person with slightly more open and attentive eyes, keep the same eye shape and identity",
   "eyes-brighter":
-    "same person with brighter more vivid gaze, keep identity",
+    "same person with brighter, more vivid and expressive gaze, no change to facial structure",
   "surprised-wow":
-    "same person with surprised wow expression, eyebrows slightly raised, keep identity"
+    "same person with a surprised wow expression, eyes a bit wider, eyebrows raised"
 };
 
-// ───────── ПОЗДРАВЛЕНИЯ (ТОЛЬКО АТМОСФЕРА, БЕЗ ТЕКСТА) ─────────
+// ───────── ПОЗДРАВЛЕНИЯ ─────────
 const GREETING_PROMPTS = {
   "new-year":
-    "festive New Year atmosphere, cozy winter mood, colorful lights and bokeh, subtle snow sparkles, but keep it tasteful",
+    "festive bright New Year portrait, cozy winter atmosphere, colorful lights and bokeh, fireworks in the distance, vivid contrast, elegant handwritten English text 'Happy New Year' on the image",
   birthday:
-    "birthday celebration mood, balloons and confetti in background, party lights, bright happy atmosphere",
+    "colorful birthday celebration portrait, balloons and confetti, party lights, bright and happy mood, elegant handwritten English text 'Happy Birthday' on the image",
   funny:
-    "playful fun vibe, bright colors, light comic-style background details, but still a portrait",
+    "playful fun portrait, very bright colors, dynamic neon shapes, comic-style details, bold handwritten English English text like 'You look amazing!' on the image",
   scary:
-    "spooky halloween vibe, cold dramatic lighting, subtle fog and eerie background, no gore"
+    "dark spooky horror-style portrait, cold dramatic lighting, subtle fog and scary background details, creepy but readable handwritten English text 'Happy Halloween' on the image"
 };
 
-// ───────── ЖЁСТКО ДЕРЖИМ ЛИЧНОСТЬ, НО НЕ МЕШАЕМ ОМОЛОЖЕНИЮ ─────────
+// ───────── ЖЁСТКО ФИКСИРУЕМ ЛИЧНОСТЬ ─────────
 const IDENTITY_PROMPT =
-  "Edit the input photo of the SAME person. The result must be clearly recognizable as the same person. " +
-  "Keep gender and facial identity. Do not replace the face with a different person.";
+  "STRICTLY edit this exact portrait photo of the SAME person from the input image only. " +
+  "The final result MUST be clearly recognizable as the same person, at least 80 percent similar to the input face. " +
+  "Keep the same gender, age range, face shape and main facial features. " +
+  "Do NOT change gender, do NOT turn a man into a woman and do NOT turn a woman into a man. " +
+  "Do NOT replace the face with a different model or a different more beautiful person. " +
+  "Do NOT change the attractiveness level, only apply the requested style, skin and expression corrections.";
 
-// ───────── ЧИСТИМ СКРИНШОТЫ ОТ UI ─────────
+// ───────── ЧИСТИМ СКРИНШОТЫ ОТ ТЕКСТА ─────────
 const UI_CLEANUP_TAIL =
-  "If the input looks like a screenshot of a website or app (panels, buttons, captions), remove and repaint all UI elements and produce only a clean portrait photo.";
-
-// ───────── СТРОГО: НИКАКОГО ТЕКСТА НА КАРТИНКЕ ─────────
-const NO_TEXT_TAIL =
-  "No text, no captions, no words, no watermarks, no logos, no labels on the image.";
+  "If the input looks like a screenshot of a website or app (with panels, buttons, menus, or long text below and around the face), completely remove and repaint all interface elements, panels, captions, buttons, watermark logos and prices. " +
+  "In that case generate only a clean portrait of the person with a simple background and no UI at all.";
 
 // ───────── БЕЗОПАСНОСТЬ ─────────
 const SAFETY_TAIL =
-  "portrait from shoulders up, person is fully clothed, no nudity, no sexual content, no extra people, correct anatomy";
+  "portrait from the shoulders up, person is fully clothed, no nudity, no explicit cleavage, no sexual content, no extra people, no distorted anatomy";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -100,6 +101,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Парсим тело запроса (Vercel иногда шлёт строку)
     let body = req.body;
     if (typeof body === "string") {
       try {
@@ -111,9 +113,13 @@ export default async function handler(req, res) {
 
     const { style, text, photo, effects, greeting } = body || {};
 
+    // 1) Стиль
     const stylePrefix = STYLE_PREFIX[style] || STYLE_PREFIX.default;
+
+    // 2) Пользовательский текст (если есть)
     const userPrompt = (text || "").trim();
 
+    // 3) Эффекты кожи/мимики
     let effectsPrompt = "";
     if (Array.isArray(effects) && effects.length > 0) {
       effectsPrompt = effects
@@ -122,11 +128,13 @@ export default async function handler(req, res) {
         .join(". ");
     }
 
+    // 4) Поздравление
     let greetingPrompt = "";
     if (greeting && GREETING_PROMPTS[greeting]) {
       greetingPrompt = GREETING_PROMPTS[greeting];
     }
 
+    // 5) Итоговый prompt
     const promptParts = [
       stylePrefix,
       effectsPrompt,
@@ -134,28 +142,33 @@ export default async function handler(req, res) {
       userPrompt,
       IDENTITY_PROMPT,
       UI_CLEANUP_TAIL,
-      NO_TEXT_TAIL,
       SAFETY_TAIL
     ].filter(Boolean);
 
     const prompt = promptParts.join(". ").trim();
 
+    // 6) Вход в модель Replicate
     const input = {
       prompt,
       output_format: "jpg"
     };
 
-    if (photo) input.input_image = photo;
+    if (photo) {
+      input.input_image = photo;
+    }
 
     const replicate = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN
     });
 
-    const output = await replicate.run("black-forest-labs/flux-kontext-pro", {
-      input
-    });
+    const output = await replicate.run(
+      "black-forest-labs/flux-kontext-pro",
+      { input }
+    );
 
+    // 7) Достаём URL картинки
     let imageUrl = null;
+
     if (Array.isArray(output)) {
       imageUrl = output[0];
     } else if (output?.output) {
@@ -172,10 +185,17 @@ export default async function handler(req, res) {
     }
 
     if (!imageUrl) {
-      return res.status(500).json({ error: "No image URL returned", raw: output });
+      return res.status(500).json({
+        error: "No image URL returned",
+        raw: output
+      });
     }
 
-    return res.status(200).json({ ok: true, image: imageUrl, prompt });
+    return res.status(200).json({
+      ok: true,
+      image: imageUrl,
+      prompt
+    });
   } catch (err) {
     console.error("GENERATION ERROR:", err);
     return res.status(500).json({
